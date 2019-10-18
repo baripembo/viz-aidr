@@ -2,7 +2,7 @@
   "name": "viz-starter",
   "version": "1.0.0",
   "description": "",
-  "homepage": "https://github.com/OCHA-DAP/viz-starter.git",
+  "homepage": "https://github.com/baripembo/viz-aidr.git",
   "main": " ",
   "scripts": {
     "start": "http-server ./dist -c-1 -p 3000",

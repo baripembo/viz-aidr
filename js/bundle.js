@@ -171,7 +171,7 @@ $( document ).ready(function() {
 
     var margin = {top: 20, right: 60, bottom: 40, left: 60},
         width = viewportWidth - margin.left - margin.right,
-        height = 175 - margin.top - margin.bottom;
+        height = 150 - margin.top - margin.bottom;
 
     var svg = d3.select("#barChart")
       .append("svg")
@@ -328,7 +328,7 @@ $( document ).ready(function() {
 
       var margin = {top: 5, right: 60, bottom: 20, left: 60},
         width = viewportWidth - margin.left - margin.right,
-        height = 125 - margin.top - margin.bottom;
+        height = 95 - margin.top - margin.bottom;
 
       var svg = d3.select("#barChart2")
         .append("svg")

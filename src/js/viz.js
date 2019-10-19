@@ -21,13 +21,13 @@ $( document ).ready(function() {
   var playButton = d3.select("#play-button");
 
   function createSlider() {
-    var margin = {top: 50, right: 50, bottom: 0, left: 50},
+    var margin = {top: 50, right: 84, bottom: 0, left: 84},
       width = viewportWidth - margin.left - margin.right,
       height = 100 - margin.top - margin.bottom;
 
     targetValue = width;
 
-    var svg = d3.select("#vis")
+    var svg = d3.select("#timeSlider")
       .append("svg")
       .attr("width", width + margin.left + margin.right)
       .attr("height", height + margin.top + margin.bottom);  
@@ -36,37 +36,35 @@ $( document ).ready(function() {
     endDate = d3.max(aidrData.map(d=>d['#date+week_start']));
     startDate = d3.min(aidrData.map(d=>d['#date+week_start']));
 
-    console.log(endDate)
-
     x = d3.scaleTime()
-        .domain([startDate, endDate])
-        .range([0, targetValue])
-        .clamp(true);
+      .domain([startDate, endDate])
+      .range([0, targetValue])
+      .clamp(true);
 
     slider = svg.append("g")
-        .attr("class", "slider")
-        .attr("transform", "translate(" + margin.left + "," + height + ")");
+      .attr("class", "slider")
+      .attr("transform", "translate(" + margin.left + "," + height + ")");
 
     slider.append("line")
-        .attr("class", "track")
-        .attr("x1", x.range()[0])
-        .attr("x2", x.range()[1])
+      .attr("class", "track")
+      .attr("x1", x.range()[0])
+      .attr("x2", x.range()[1])
       .select(function() { return this.parentNode.appendChild(this.cloneNode(true)); })
         .attr("class", "track-inset")
       .select(function() { return this.parentNode.appendChild(this.cloneNode(true)); })
         .attr("class", "track-overlay")
         .call(d3.drag()
-            .on("start.interrupt", function() { slider.interrupt(); })
-            .on("start drag", function() {
-              currentValue = Math.round(x.invert(d3.event.x));
-              //currentValue = d3.event.x;
-              update(currentValue); 
-            })
+          .on("start.interrupt", function() { slider.interrupt(); })
+          .on("start drag", function() {
+            currentValue = Math.round(x.invert(d3.event.x));
+            //currentValue = d3.event.x;
+            update(currentValue); 
+          })
         );
 
     slider.insert("g", ".track-overlay")
-        .attr("class", "ticks")
-        .attr("transform", "translate(0," + 18 + ")")
+      .attr("class", "ticks")
+      .attr("transform", "translate(0," + 18 + ")")
       .selectAll("text")
         .data(x.ticks(10))
         .enter()
@@ -77,19 +75,19 @@ $( document ).ready(function() {
         .text(function(d) { return formatDate(d); });
 
     handle = slider.insert("circle", ".track-overlay")
-        .attr("class", "handle")
-        .attr("r", 9);
+      .attr("class", "handle")
+      .attr("r", 9);
 
-    label = slider.append("text")  
-        .attr("class", "label")
-        .attr("text-anchor", "middle")
-        .text(formatDate(startDate))
-        .attr("transform", "translate(0," + (-25) + ")")
+    // label = slider.append("text")  
+    //   .attr("class", "label")
+    //   .attr("text-anchor", "middle")
+    //   .text(formatDate(startDate))
+    //   .attr("transform", "translate(0," + (-25) + ")")
 
     //show every other tick for legibility
     var ticks = d3.selectAll(".ticks text");
     ticks.each(function(_,i){
-        if (i%2 !== 0) d3.select(this).remove();
+      if (i%2 !== 0) d3.select(this).remove();
     });
   }
 
@@ -138,9 +136,9 @@ $( document ).ready(function() {
     var z = d3.scaleOrdinal().range(["#214189", "#41B3E6", "#9B6E50"]);
     z.domain(keys);
 
-    var margin = {top: 30, right: 60, bottom: 50, left: 60},
+    var margin = {top: 20, right: 60, bottom: 40, left: 60},
         width = viewportWidth - margin.left - margin.right,
-        height = 200 - margin.top - margin.bottom;
+        height = 175 - margin.top - margin.bottom;
 
     var svg = d3.select("#barChart")
       .append("svg")
@@ -159,10 +157,11 @@ $( document ).ready(function() {
       .attr("transform", "translate(0," + height + ")")
       .call(d3.axisBottom(x))
       .selectAll("text")
-        .attr("transform", "translate(-10,0)rotate(-45)")
-        .style("text-anchor", "end");
+        // .attr("transform", "translate(-10,0)rotate(-90)")
+        // .style("text-anchor", "end")
+        .style("display", "none");
 
-    // y axis
+    //y axis
     var tweetMax = d3.max(tweetData, function(d) { return +d.value; } );
     var y = d3.scaleLinear()
       .domain([0, tweetMax])
@@ -199,7 +198,7 @@ $( document ).ready(function() {
         );
       });
 
-    // tooltip
+    //tooltip
     var tooltip = svg.append("g")
       .attr("class", "tooltip")
       .style("display", "none");
@@ -279,9 +278,11 @@ $( document ).ready(function() {
       if (eventStartDate >= startDate) {
         return {
           event_start_date: eventStartDate,
-          event_date : eventDate,
-          event_type : d.event_type,
-          country_code : d.iso3
+          event_date: eventDate,
+          event_type: d.event_type,
+          country_code: d.iso3,
+          lat: d.latitude,
+          lon: d.longitude
         };
       }
     }).then(function(data) {
@@ -312,8 +313,6 @@ $( document ).ready(function() {
         .attr("transform", "translate(0,0)")
         .call(d3.axisTop(x))
         .selectAll("text")
-          .attr("transform", "translate(0,-20)rotate(-45)")
-          .style("text-anchor", "start")
           .style("display", "none");
 
       //y axis
@@ -469,18 +468,18 @@ $( document ).ready(function() {
         d.lon = coords.lon;
       });
 
-      //group event data by country
-      eventCountryData = d3.nest()
-        .key(function (d) { return d.country_code; })
-        .rollup(function(leaves) { return leaves.length;})
-        .entries(acledData);
+      // //group event data by country
+      // eventCountryData = d3.nest()
+      //   .key(function (d) { return d.country_code; })
+      //   .rollup(function(leaves) { return leaves.length;})
+      //   .entries(acledData);
 
-      //add coord data to grouped data
-      eventCountryData.forEach(function(d){
-        var coords = getCoords(d.key);
-        d.lat = coords.lat;
-        d.lon = coords.lon;
-      });
+      // //add coord data to grouped data
+      // eventCountryData.forEach(function(d){
+      //   var coords = getCoords(d.key);
+      //   d.lat = coords.lat;
+      //   d.lon = coords.lon;
+      // });
 
       drawMap();
     });
@@ -543,12 +542,13 @@ $( document ).ready(function() {
 
     tweetMarker
       .attr('fill-opacity', 0.5)
-      .attr('fill', '#41B3E6');
+      .attr('fill', '#41B3E6')
+      .attr("stroke", '#41B3E6');
 
     //create event markers
     var eventMarker = mapsvg.append("g")
       .selectAll("g")
-      .data(eventCountryData)
+      .data(acledData)
       .enter()
         .append("g")
         .append("circle")
@@ -558,8 +558,9 @@ $( document ).ready(function() {
         });
 
     eventMarker
-      .attr('fill-opacity', 1)
-      .attr('fill', '#F7941E');
+      .attr('fill-opacity', 0.5)
+      .attr('fill', '#F7941E')
+      .attr("stroke", '#F7941E');
   }
 
 

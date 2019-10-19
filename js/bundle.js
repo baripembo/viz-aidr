@@ -576,7 +576,8 @@ $( document ).ready(function() {
 
     tweetMarker
       .attr('fill-opacity', 0.5)
-      .attr('fill', '#41B3E6');
+      .attr('fill', '#41B3E6')
+      .attr("stroke", '#41B3E6');
 
     //create event markers
     var eventMarker = mapsvg.append("g")

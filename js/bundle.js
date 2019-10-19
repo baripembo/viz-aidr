@@ -54,13 +54,13 @@ $( document ).ready(function() {
   var playButton = d3.select("#play-button");
 
   function createSlider() {
-    var margin = {top: 50, right: 50, bottom: 0, left: 50},
+    var margin = {top: 50, right: 84, bottom: 0, left: 84},
       width = viewportWidth - margin.left - margin.right,
       height = 100 - margin.top - margin.bottom;
 
     targetValue = width;
 
-    var svg = d3.select("#vis")
+    var svg = d3.select("#timeSlider")
       .append("svg")
       .attr("width", width + margin.left + margin.right)
       .attr("height", height + margin.top + margin.bottom);  
@@ -111,11 +111,11 @@ $( document ).ready(function() {
       .attr("class", "handle")
       .attr("r", 9);
 
-    label = slider.append("text")  
-      .attr("class", "label")
-      .attr("text-anchor", "middle")
-      .text(formatDate(startDate))
-      .attr("transform", "translate(0," + (-25) + ")")
+    // label = slider.append("text")  
+    //   .attr("class", "label")
+    //   .attr("text-anchor", "middle")
+    //   .text(formatDate(startDate))
+    //   .attr("transform", "translate(0," + (-25) + ")")
 
     //show every other tick for legibility
     var ticks = d3.selectAll(".ticks text");
@@ -169,9 +169,9 @@ $( document ).ready(function() {
     var z = d3.scaleOrdinal().range(["#214189", "#41B3E6", "#9B6E50"]);
     z.domain(keys);
 
-    var margin = {top: 30, right: 60, bottom: 50, left: 60},
+    var margin = {top: 20, right: 60, bottom: 40, left: 60},
         width = viewportWidth - margin.left - margin.right,
-        height = 200 - margin.top - margin.bottom;
+        height = 175 - margin.top - margin.bottom;
 
     var svg = d3.select("#barChart")
       .append("svg")
@@ -190,10 +190,11 @@ $( document ).ready(function() {
       .attr("transform", "translate(0," + height + ")")
       .call(d3.axisBottom(x))
       .selectAll("text")
-        .attr("transform", "translate(-10,0)rotate(-45)")
-        .style("text-anchor", "end");
+        // .attr("transform", "translate(-10,0)rotate(-90)")
+        // .style("text-anchor", "end")
+        .style("display", "none");
 
-    // y axis
+    //y axis
     var tweetMax = d3.max(tweetData, function(d) { return +d.value; } );
     var y = d3.scaleLinear()
       .domain([0, tweetMax])
@@ -230,7 +231,7 @@ $( document ).ready(function() {
         );
       });
 
-    // tooltip
+    //tooltip
     var tooltip = svg.append("g")
       .attr("class", "tooltip")
       .style("display", "none");
@@ -345,8 +346,6 @@ $( document ).ready(function() {
         .attr("transform", "translate(0,0)")
         .call(d3.axisTop(x))
         .selectAll("text")
-          .attr("transform", "translate(0,-20)rotate(-45)")
-          .style("text-anchor", "start")
           .style("display", "none");
 
       //y axis

@@ -69,37 +69,35 @@ $( document ).ready(function() {
     endDate = d3.max(aidrData.map(d=>d['#date+week_start']));
     startDate = d3.min(aidrData.map(d=>d['#date+week_start']));
 
-    console.log(endDate)
-
     x = d3.scaleTime()
-        .domain([startDate, endDate])
-        .range([0, targetValue])
-        .clamp(true);
+      .domain([startDate, endDate])
+      .range([0, targetValue])
+      .clamp(true);
 
     slider = svg.append("g")
-        .attr("class", "slider")
-        .attr("transform", "translate(" + margin.left + "," + height + ")");
+      .attr("class", "slider")
+      .attr("transform", "translate(" + margin.left + "," + height + ")");
 
     slider.append("line")
-        .attr("class", "track")
-        .attr("x1", x.range()[0])
-        .attr("x2", x.range()[1])
+      .attr("class", "track")
+      .attr("x1", x.range()[0])
+      .attr("x2", x.range()[1])
       .select(function() { return this.parentNode.appendChild(this.cloneNode(true)); })
         .attr("class", "track-inset")
       .select(function() { return this.parentNode.appendChild(this.cloneNode(true)); })
         .attr("class", "track-overlay")
         .call(d3.drag()
-            .on("start.interrupt", function() { slider.interrupt(); })
-            .on("start drag", function() {
-              currentValue = Math.round(x.invert(d3.event.x));
-              //currentValue = d3.event.x;
-              update(currentValue); 
-            })
+          .on("start.interrupt", function() { slider.interrupt(); })
+          .on("start drag", function() {
+            currentValue = Math.round(x.invert(d3.event.x));
+            //currentValue = d3.event.x;
+            update(currentValue); 
+          })
         );
 
     slider.insert("g", ".track-overlay")
-        .attr("class", "ticks")
-        .attr("transform", "translate(0," + 18 + ")")
+      .attr("class", "ticks")
+      .attr("transform", "translate(0," + 18 + ")")
       .selectAll("text")
         .data(x.ticks(10))
         .enter()
@@ -110,19 +108,19 @@ $( document ).ready(function() {
         .text(function(d) { return formatDate(d); });
 
     handle = slider.insert("circle", ".track-overlay")
-        .attr("class", "handle")
-        .attr("r", 9);
+      .attr("class", "handle")
+      .attr("r", 9);
 
     label = slider.append("text")  
-        .attr("class", "label")
-        .attr("text-anchor", "middle")
-        .text(formatDate(startDate))
-        .attr("transform", "translate(0," + (-25) + ")")
+      .attr("class", "label")
+      .attr("text-anchor", "middle")
+      .text(formatDate(startDate))
+      .attr("transform", "translate(0," + (-25) + ")")
 
     //show every other tick for legibility
     var ticks = d3.selectAll(".ticks text");
     ticks.each(function(_,i){
-        if (i%2 !== 0) d3.select(this).remove();
+      if (i%2 !== 0) d3.select(this).remove();
     });
   }
 
@@ -312,9 +310,11 @@ $( document ).ready(function() {
       if (eventStartDate >= startDate) {
         return {
           event_start_date: eventStartDate,
-          event_date : eventDate,
-          event_type : d.event_type,
-          country_code : d.iso3
+          event_date: eventDate,
+          event_type: d.event_type,
+          country_code: d.iso3,
+          lat: d.latitude,
+          lon: d.longitude
         };
       }
     }).then(function(data) {
@@ -502,18 +502,18 @@ $( document ).ready(function() {
         d.lon = coords.lon;
       });
 
-      //group event data by country
-      eventCountryData = d3.nest()
-        .key(function (d) { return d.country_code; })
-        .rollup(function(leaves) { return leaves.length;})
-        .entries(acledData);
+      // //group event data by country
+      // eventCountryData = d3.nest()
+      //   .key(function (d) { return d.country_code; })
+      //   .rollup(function(leaves) { return leaves.length;})
+      //   .entries(acledData);
 
-      //add coord data to grouped data
-      eventCountryData.forEach(function(d){
-        var coords = getCoords(d.key);
-        d.lat = coords.lat;
-        d.lon = coords.lon;
-      });
+      // //add coord data to grouped data
+      // eventCountryData.forEach(function(d){
+      //   var coords = getCoords(d.key);
+      //   d.lat = coords.lat;
+      //   d.lon = coords.lon;
+      // });
 
       drawMap();
     });
@@ -582,7 +582,7 @@ $( document ).ready(function() {
     //create event markers
     var eventMarker = mapsvg.append("g")
       .selectAll("g")
-      .data(eventCountryData)
+      .data(acledData)
       .enter()
         .append("g")
         .append("circle")
@@ -592,8 +592,9 @@ $( document ).ready(function() {
         });
 
     eventMarker
-      .attr('fill-opacity', 1)
-      .attr('fill', '#F7941E');
+      .attr('fill-opacity', 0.5)
+      .attr('fill', '#F7941E')
+      .attr("stroke", '#F7941E');
   }
 
 

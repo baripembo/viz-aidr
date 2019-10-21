@@ -21,9 +21,9 @@ $( document ).ready(function() {
   var playButton = d3.select("#play-button");
 
   function createSlider() {
-    var margin = {top: 50, right: 84, bottom: 0, left: 84},
+    var margin = {top: 0, right: 84, bottom: 50, left: 84},
       width = viewportWidth - margin.left - margin.right,
-      height = 100 - margin.top - margin.bottom;
+      height = 60 - margin.top - margin.bottom;
 
     targetValue = width;
 

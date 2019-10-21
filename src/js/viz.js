@@ -55,9 +55,12 @@ $( document ).ready(function() {
         .attr("class", "track-overlay")
         .call(d3.drag()
           .on("start.interrupt", function() { slider.interrupt(); })
-          .on("start drag", function() {
+          .on("end", function() {
             currentValue = Math.round(x.invert(d3.event.x));
-            //currentValue = d3.event.x;
+            update(closestSunday(new Date(currentValue))); //snap slider to closest sunday
+          })
+          .on("drag", function() {
+            currentValue = Math.round(x.invert(d3.event.x));
             update(currentValue); 
           })
         );
@@ -145,8 +148,7 @@ $( document ).ready(function() {
         .attr("width", width + margin.left + margin.right)
         .attr("height", height + margin.top + margin.bottom)
       .append("g")
-        .attr("transform",
-              "translate(" + margin.left + "," + margin.top + ")");
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
     // x axis
     var x = d3.scaleBand()
@@ -424,9 +426,9 @@ $( document ).ready(function() {
   function update(h) {
     // update position and text of label according to slider scale
     handle.attr("cx", x(h));
-    label
-      .attr("x", x(h))
-      .text(formatDate(h));
+    // label
+    //   .attr("x", x(h))
+    //   .text(formatDate(h));
     // filter data set and redraw plot
     // var newData = dataset.filter(function(d) {
     //   return d.date < h;

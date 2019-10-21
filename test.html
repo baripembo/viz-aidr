@@ -34,9 +34,9 @@
 
 </style>
 <body>
-<script src="https://d3js.org/d3.v3.min.js"></script>
+<script src="https://d3js.org/d3.v5.js"></script>
 <script>
-var formatDate = d3.time.format("%Y-%m-%d");
+var formatDate = d3.timeFormat("%Y-%m-%d");
 
 var margin = {top: 200, right: 50, bottom: 200, left: 50},
     width = 960 - margin.left - margin.right,
@@ -50,16 +50,16 @@ var margin = {top: 200, right: 50, bottom: 200, left: 50},
 var startDate = new Date(2019, 1, 1);
 var endDate = new Date();
 
-var x = d3.time.scale()
+var x = d3.scaleTime()
     .domain([startDate, endDate])
     .range([0, width])
     .clamp(true);
 
-var brush = d3.svg.brush()
-    .x(x)
-    .extent([0, 0])
+var brush = d3.brushX()
+    //.x(x)
+    .extent([[x.range()[0], 0], [x.range()[1], width]])
     .on("brush", brushed)
-    .on("brushend", brushend);
+    .on("end", brushend);
 
 var svg = d3.select("body").append("svg")
     .attr("width", width + margin.left + margin.right)
@@ -70,9 +70,7 @@ var svg = d3.select("body").append("svg")
 svg.append("g")
     .attr("class", "x axis")
     .attr("transform", "translate(0," + height / 2 + ")")
-    .call(d3.svg.axis()
-      .scale(x)
-      .orient("bottom")
+    .call(d3.axisBottom(x)
       .tickFormat(function(d) { return formatDate(d); })
       .tickSize(0)
       .tickPadding(12))
@@ -127,10 +125,20 @@ function brushend() {
      .duration(0)
      .call(brush.event);                           
   
-   d3.select(this)
-     .transition()
-     .call(brush.extent(brush.extent().map(function(d) { console.log(d); return d3.round(d, -1); })))
-     .call(brush.event);   
- }
+    d3.select(this)
+      .transition()
+      .call(brush.extent(brush.extent().map(function(d) {
+        var sun = closestSunday(d);
+        return sun; 
+      })))
+      .call(brush.event);   
+  }
 
+  function closestSunday(d) {
+    var prevSun = d.getDate() - d.getDay();
+    var nextSun = prevSun + 7;
+    var sun = (Math.abs(d.getDate() - prevSun) < Math.abs(d.getDate() - nextSun)) ? prevSun : nextSun;
+    d.setDate(sun);
+    return d;
+  }
 </script>

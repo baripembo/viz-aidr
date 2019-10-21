@@ -1,35 +1,43 @@
 window.$ = window.jQuery = require('jquery');
 function hxlProxyToJSON(input){
-    var output = [];
-    var keys=[]
-    input.forEach(function(e,i){
-        if(i==0){
-            e.forEach(function(e2,i2){
-                var parts = e2.split('+');
-                var key = parts[0]
-                if(parts.length>1){
-                    var atts = parts.splice(1,parts.length);
-                    atts.sort();                    
-                    atts.forEach(function(att){
-                        key +='+'+att
-                    });
-                }
-                keys.push(key);
-            });
-        } else {
-            var row = {};
-            e.forEach(function(e2,i2){
-                row[keys[i2]] = e2;
-            });
-            output.push(row);
+  var output = [];
+  var keys=[]
+  input.forEach(function(e,i){
+    if(i==0){
+      e.forEach(function(e2,i2){
+        var parts = e2.split('+');
+        var key = parts[0]
+        if(parts.length>1){
+          var atts = parts.splice(1,parts.length);
+          atts.sort();                    
+          atts.forEach(function(att){
+            key +='+'+att
+          });
         }
-    });
-    return output;
+        keys.push(key);
+      });
+    } else {
+      var row = {};
+      e.forEach(function(e2,i2){
+        row[keys[i2]] = e2;
+      });
+      output.push(row);
+    }
+  });
+  return output;
 }
 
 function startOfWeek(date) {
-    var diff = date.getDate() - date.getDay() + (date.getDay() === 0 ? -7 : 0);
-    return new Date(date.setDate(diff)); 
+  var diff = date.getDate() - date.getDay() + (date.getDay() === 0 ? -7 : 0);
+  return new Date(date.setDate(diff)); 
+}
+
+function closestSunday(d) {
+  var prevSun = d.getDate() - d.getDay();
+  var nextSun = prevSun + 7;
+  var closestSun = (Math.abs(d.getDate() - prevSun) < Math.abs(d.getDate() - nextSun)) ? prevSun : nextSun;
+  d.setDate(closestSun);
+  return d;
 }
 $( document ).ready(function() {
   let isMobile = $(window).width()<600? true : false;
@@ -88,9 +96,12 @@ $( document ).ready(function() {
         .attr("class", "track-overlay")
         .call(d3.drag()
           .on("start.interrupt", function() { slider.interrupt(); })
-          .on("start drag", function() {
+          .on("end", function() {
             currentValue = Math.round(x.invert(d3.event.x));
-            //currentValue = d3.event.x;
+            update(closestSunday(new Date(currentValue))); //snap slider to closest sunday
+          })
+          .on("drag", function() {
+            currentValue = Math.round(x.invert(d3.event.x));
             update(currentValue); 
           })
         );
@@ -178,8 +189,7 @@ $( document ).ready(function() {
         .attr("width", width + margin.left + margin.right)
         .attr("height", height + margin.top + margin.bottom)
       .append("g")
-        .attr("transform",
-              "translate(" + margin.left + "," + margin.top + ")");
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
     // x axis
     var x = d3.scaleBand()
@@ -457,9 +467,9 @@ $( document ).ready(function() {
   function update(h) {
     // update position and text of label according to slider scale
     handle.attr("cx", x(h));
-    label
-      .attr("x", x(h))
-      .text(formatDate(h));
+    // label
+    //   .attr("x", x(h))
+    //   .text(formatDate(h));
     // filter data set and redraw plot
     // var newData = dataset.filter(function(d) {
     //   return d.date < h;

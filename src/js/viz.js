@@ -4,7 +4,7 @@ $( document ).ready(function() {
   let acledPath = 'data/2019-acled-education.csv'//https://proxy.hxlstandard.org/data/acbeef.csv
   let geomPath = 'data/worldmap.json';
   
-  let aidrData, acledData, geomData = '';
+  let aidrData, acledData, geomData, coordData = '';
 
   var formatDate = d3.timeFormat("%Y-%m-%d");
   var parseDate = d3.timeParse("%m/%d/%y");
@@ -30,11 +30,7 @@ $( document ).ready(function() {
     var svg = d3.select("#timeSlider")
       .append("svg")
       .attr("width", width + margin.left + margin.right)
-      .attr("height", height + margin.top + margin.bottom);  
-
-    var max = d3.max(aidrData, function(d) { return +d['#indicator+tweets'];} );
-    endDate = d3.max(aidrData.map(d=>d['#date+week_start']));
-    startDate = d3.min(aidrData.map(d=>d['#date+week_start']));
+      .attr("height", height + margin.top + margin.bottom);
 
     x = d3.scaleTime()
       .domain([startDate, endDate])
@@ -69,7 +65,7 @@ $( document ).ready(function() {
       .attr("class", "ticks")
       .attr("transform", "translate(0," + 18 + ")")
       .selectAll("text")
-        .data(x.ticks(10))
+        .data(x.ticks(20))
         .enter()
         .append("text")
         .attr("x", x)
@@ -274,80 +270,63 @@ $( document ).ready(function() {
 
 
   function createBarChart2() {
-    d3.csv(acledPath, function(d) {
-      var eventDate = new Date(d.event_date);
-      var eventStartDate = startOfWeek(eventDate);
-      if (eventStartDate >= startDate) {
-        return {
-          event_start_date: eventStartDate,
-          event_date: eventDate,
-          event_type: d.event_type,
-          country_code: d.iso3,
-          lat: d.latitude,
-          lon: d.longitude
-        };
-      }
-    }).then(function(data) {
-      acledData = data.reverse();
+    var eventData = d3.nest()
+      .key(function (d) { return d.event_start_date; })
+      .rollup(function(leaves) { return leaves.length;})
+      .entries(acledData);
 
-      var eventData = d3.nest()
-        .key(function (d) { return d.event_start_date; })
-        .rollup(function(leaves) { return leaves.length;})
-        .entries(acledData);
+    var margin = {top: 5, right: 60, bottom: 20, left: 60},
+      width = viewportWidth - margin.left - margin.right,
+      height = 95 - margin.top - margin.bottom;
 
-      var margin = {top: 5, right: 60, bottom: 20, left: 60},
-        width = viewportWidth - margin.left - margin.right,
-        height = 95 - margin.top - margin.bottom;
+    var svg = d3.select("#barChart2")
+      .append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+      .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-      var svg = d3.select("#barChart2")
-        .append("svg")
-          .attr("width", width + margin.left + margin.right)
-          .attr("height", height + margin.top + margin.bottom)
-        .append("g")
-          .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
-      //x axis
-      var x = d3.scaleBand()
-        .range([0, width])
-        .domain(eventData.map(function(d) { return formatDate(new Date(d.key)); }))
-        .padding(0.3);
+    //x axis
+    var x = d3.scaleBand()
+      .range([0, width])
+      .domain(eventData.map(function(d) { return formatDate(new Date(d.key)); }))
+      .padding(0.3);
       svg.append("g")
         .attr("transform", "translate(0,0)")
         .call(d3.axisTop(x))
         .selectAll("text")
           .style("display", "none");
 
-      //y axis
-      var eventMax = d3.max(eventData, function(d) { return +d.value; } );
-      var y = d3.scaleLinear()
-        .domain([0, eventMax])
-        .range([0, height]);
+    //y axis
+    var eventMax = d3.max(eventData, function(d) { return +d.value; } );
+    var y = d3.scaleLinear()
+      .domain([0, eventMax])
+      .range([0, height]);
       svg.append("g")
         .attr("transform", "translate("+ width +",0)")
         .call(d3.axisRight(y)
         .ticks(5));
 
-      //bars
-      svg.selectAll("bar")
-        .data(eventData)
-        .enter()
-        .append("rect")
-          .attr("x", function(d) { return x(formatDate(new Date(d.key))); })
-          .attr("y", function(d) { return y(2); })
-          .attr("width", x.bandwidth())
-          .attr("height", function(d) { return y(d.value); })
-          .attr("fill", "#F7941E");
+    //bars
+    svg.selectAll("bar")
+      .data(eventData)
+      .enter()
+      .append("rect")
+        .attr("x", function(d) { return x(formatDate(new Date(d.key))); })
+        .attr("y", function(d) { return y(2); })
+        .attr("width", x.bandwidth())
+        .attr("height", function(d) { return y(d.value); })
+        .attr("fill", "#F7941E");
 
-      //chart title
-      svg.append("text")
-        .attr("transform", "translate(" + 0 + "," + height + ")")
-        .attr("x", 0)
-        .attr("y", -25)
-        .attr("dy", "1em")
-        .attr("text-anchor", "start")
-        .attr("class", "labelHeader")
-        .html("Insecurity Events");
-    });
+    //chart title
+    svg.append("text")
+      .attr("transform", "translate(" + 0 + "," + height + ")")
+      .attr("x", 0)
+      .attr("y", -25)
+      .attr("dy", "1em")
+      .attr("text-anchor", "start")
+      .attr("class", "labelHeader")
+      .html("Insecurity Events");
   }
    
   ////////// plot //////////
@@ -436,55 +415,35 @@ $( document ).ready(function() {
     // drawPlot(newData);
   }
 
-  var mapsvg, coordData, tweetCountryData, eventCountryData;
+  var mapsvg, tweetCountryData, eventCountryData;
   function initMap(){
-    //get coord data
-    d3.csv('data/coordinates.csv', function(d) {
-      return {
-        country: d['Country'],
-        country_code: d['Alpha-3 code'],
-        lon: d['Longitude (average)'], 
-        lat: d['Latitude (average)']
-      };
-    }).then(function(data){
-      coordData = data;
-
-      //group tweet data by country
-      tweetCountryData = d3.nest()
-        .key(function(d) {
-          return d['#country+code+v_iso2'];
+    //group tweet data by country
+    tweetCountryData = d3.nest()
+      .key(function(d) {
+        return d['#country+code+v_iso2'];
+      })
+      .rollup(function(leaves) {
+        var total = 0;
+        leaves.forEach(function(d) {
+          total += Number(d['#indicator+tweets']);
         })
-        .rollup(function(leaves) {
-          var total = 0;
-          leaves.forEach(function(d) {
-            total += Number(d['#indicator+tweets']);
-          })
-          return total;
-        })
-        .entries(aidrData);
+        return total;
+      })
+      .entries(aidrData);
 
-      //add coord data to grouped data
-      tweetCountryData.forEach(function(d){
-        var coords = getCoords(d.key);
-        d.lat = coords.lat;
-        d.lon = coords.lon;
-      });
+    //add coord data to grouped data
+    for (var i=tweetCountryData.length-1; i>=0; i--){
+      if (tweetCountryData[i].key!=''){
+        var coords = getCoords(tweetCountryData[i].key);
+        tweetCountryData[i].lat = coords.lat;
+        tweetCountryData[i].lon = coords.lon;
+      }
+      else{
+        tweetCountryData.splice(i, 1);
+      }
+    }
 
-      // //group event data by country
-      // eventCountryData = d3.nest()
-      //   .key(function (d) { return d.country_code; })
-      //   .rollup(function(leaves) { return leaves.length;})
-      //   .entries(acledData);
-
-      // //add coord data to grouped data
-      // eventCountryData.forEach(function(d){
-      //   var coords = getCoords(d.key);
-      //   d.lat = coords.lat;
-      //   d.lon = coords.lon;
-      // });
-
-      drawMap();
-    });
+    drawMap();
   }
 
   function getCoords(code){
@@ -499,13 +458,12 @@ $( document ).ready(function() {
   }
 
   function drawMap(){
-    var margin = {top: 0, right: 0, bottom: 0, left: 0},
-      width = viewportWidth - margin.left - margin.right,
-      height = 450 - margin.top - margin.bottom;
+    var width = viewportWidth,
+        height = 450;
 
     mapsvg = d3.select('#map').append('svg')
-      .attr("width", width + margin.left + margin.right)
-      .attr("height", height + margin.top + margin.bottom)
+      .attr("width", width)
+      .attr("height", height)
 
     var projection = d3.geoMercator()
       .center([0, 30])
@@ -537,7 +495,9 @@ $( document ).ready(function() {
       .enter()
         .append("g")
         .append("circle")
-        .attr('r', function (d) { return (d.value==0) ? rlog(1) : rlog(d.value); })
+        .attr('r', function (d) { 
+          return (d.value==0) ? rlog(1) : rlog(d.value); 
+        })
         .attr("transform", function(d) {
           return "translate(" + projection([d.lon, d.lat]) + ")";
         });
@@ -553,8 +513,8 @@ $( document ).ready(function() {
       .data(acledData)
       .enter()
         .append("g")
-        .append("circle")
-        .attr('r', 3)
+        .append('path')
+        .attr("d", d3.symbol().type(d3.symbolTriangle).size(75))
         .attr("transform", function(d) {
           return "translate(" + projection([d.lon, d.lat]) + ")";
         });
@@ -562,29 +522,62 @@ $( document ).ready(function() {
     eventMarker
       .attr('fill-opacity', 0.5)
       .attr('fill', '#F7941E')
-      .attr("stroke", '#F7941E');
+      //.attr("stroke", '#F7941E');
   }
 
 
   function getData() {
-    $.when(
-      // get aidr data
-      $.get(aidrPath).done(function(d){
-        aidrData = d;
-        aidrData.forEach(function(d) {
-          var date = d['#date+week_start'].split('-');
-          d['#date+week_start'] = new Date(date[0], date[1]-1, date[2]);
-        });
-      }),
+    Promise.all([
+      d3.csv('data/coordinates.csv'),
+      d3.csv(acledPath),
+      d3.json(aidrPath),
+      d3.json(geomPath)
+    ]).then(function(data) {
+      //parse coord data
+      coordData = [];
+      data[0].forEach(function(d, i){
+        var obj = {
+          country: d['Country'],
+          country_code: d['Alpha-3 code'],
+          lon: d['Longitude (average)'], 
+          lat: d['Latitude (average)']
+        }
+        coordData.push(obj);
+      });
 
-      // get geo data
-      $.get(geomPath).done(function(result){
-        geomData = topojson.feature(result, result.objects.geom);
-      })
-    ).then(function() {
+      //parse aidr data
+      aidrData = data[2];
+      aidrData.forEach(function(d) {
+        var date = d['#date+week_start'].split('-');
+        d['#date+week_start'] = new Date(date[0], date[1]-1, date[2]);
+      });
+      endDate = d3.max(aidrData.map(d=>d['#date+week_start']));
+      startDate = d3.min(aidrData.map(d=>d['#date+week_start']));
+
+      //parse acled data
+      acledData = [];
+      data[1] = data[1].reverse();
+      data[1].forEach(function(d, i){
+        var eventDate = new Date(d.event_date);
+        if (eventDate >= startDate && eventDate <= endDate){
+          var obj = {
+            event_start_date: startOfWeek(eventDate),
+            event_date: eventDate,
+            event_type: d.event_type,
+            country_code: d.iso3,
+            lat: d.latitude,
+            lon: d.longitude
+          }
+          acledData.push(obj);
+        }
+      });
+
+      //parse geom data
+      geomData = topojson.feature(data[3], data[3].objects.geom);
+
+      //remove loader and show vis
       $('.sp').hide();
       $('main, footer').css('opacity', 1);
-
       createSlider();
       createBarChart();
       createBarChart2();

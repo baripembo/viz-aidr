@@ -27,7 +27,9 @@ function hxlProxyToJSON(input){
 }
 
 function startOfWeek(date) {
-  var diff = date.getDate() - date.getDay() + (date.getDay() === 0 ? -7 : 0);
+  //console.log(date, date.getDate(), date.getDay())
+  var diff = date.getDate() - date.getDay();
+  //console.log(new Date(date.setDate(diff)))
   return new Date(date.setDate(diff)); 
 }
 
@@ -36,5 +38,6 @@ function closestSunday(d) {
   var nextSun = prevSun + 7;
   var closestSun = (Math.abs(d.getDate() - prevSun) < Math.abs(d.getDate() - nextSun)) ? prevSun : nextSun;
   d.setDate(closestSun);
+  d.setHours(0,0,0,0);
   return d;
 }

@@ -40,7 +40,7 @@ footer {
   align-items: center;
   display: flex;
   img {
-    margin-left: 40px;
+    margin-left: 30px;
     margin-bottom: 0;
     vertical-align: top;
     width: auto;
@@ -56,16 +56,22 @@ h1 {
   text-align: center;
 }
 
-p.intro {
+.intro p{
   margin: 0 auto;
   padding-bottom: 30px;
   text-align: center;
   width: 75%;
 }
 
+label,
 .label,
 .labelHeader {
   font-size: 10px;
+}
+
+label {
+  align-items: center;
+  display: flex;
 }
 
 .labelHeader {
@@ -74,12 +80,13 @@ p.intro {
 }
 
 #vis {
+  margin-top: -60px;
   position: relative;
 }
 
 #timeSlider {
   position: absolute;
-  top: 105px;
+  top: 155px;
 }
 
 #play-button {
@@ -148,9 +155,91 @@ p.intro {
   font-size: 10px;
 }
 
+.tooltip {
+  font-size: 12px;
+  line-height: 16px;
+  > * {
+    fill: #E9C880;
+    opacity: 0.8;
+  }
+}
+
 #map{
   border: 1px solid #CCC;
+  overflow: hidden;
+  position: relative;
+  .map-controls{
+    background-color: rgba(255, 255, 255, 0.8);
+    bottom: 20px;
+    left: 20px;
+    position: absolute;
+    z-index: 100;
+    .layers{
+      display: flex;
+      flex-flow: column;
+      .labelHeader{
+        padding-bottom: 3px;
+      }
+    }
+    .legend{
+      border: 1px solid #B7B7B7;
+      margin-top: 5px;
+      padding: 10px 5px;
+    }
+  }
+  .tweetLayer,
+  .eventLayer{
+    transition: 0.3s all ease;
+  }
+  .controls {
+    position: absolute;
+    left: 15px;
+    top: 15px;
+    display: grid;
+    grid-gap: 5px;
+  }
+  button {
+    width: 30px;
+    height: 30px;
+    font-size: 18px;
+    display:grid;
+    border-radius:50% !important;
+    background: rgba(240, 240, 240, 0.8);
+    color: darkgrey;
+    border: 1px solid #aaaaaa;
+    user-select: none;
+    cursor: pointer;
+    box-sizing: border-box;
+  }
+  button:active {
+    background: rgba(200, 200, 200, 0.8);
+  }
+  button:focus {
+    outline: 0;
+  }
 }
+
+.axis {
+  line,
+  path {
+    stroke: #999;
+  }
+  text{
+    fill: #999;
+  } 
+}
+
+.tweet-marker{
+  fill-opacity: 0.5;
+  fill: #41B3E6;
+  stroke: #41B3E6;
+}
+
+.event-marker{
+  fill-opacity: 0.5;
+  fill: #F7941E;
+}
+
 
 @media only screen and (max-width: 767px) {
 	.logos {

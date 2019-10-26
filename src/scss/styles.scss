@@ -65,7 +65,7 @@ h1 {
 
 label,
 .label,
-.labelHeader {
+.label-header {
   font-size: 10px;
 }
 
@@ -74,7 +74,7 @@ label {
   display: flex;
 }
 
-.labelHeader {
+.label-header {
   font-weight: bold;
   text-transform: uppercase;
 }
@@ -86,7 +86,7 @@ label {
 
 #timeSlider {
   position: absolute;
-  top: 155px;
+  top: 152px;
 }
 
 #play-button {
@@ -116,19 +116,18 @@ label {
 .track,
 .track-inset,
 .track-overlay {
-  stroke-linecap: round;
+  stroke-linecap: square;
 }
 
 .track {
-  stroke: #000;
-  stroke-opacity: 0.3;
-  stroke-width: 10px;
+  stroke: #E9C880;
+  stroke-width: 4px;
 }
 
-.track-inset {
-  stroke: #dcdcdc;
-  stroke-width: 8px;
-}
+// .track-inset {
+//   stroke: #dcdcdc;
+//   stroke-width: 8px;
+// }
 
 .track-overlay {
   pointer-events: stroke;
@@ -138,21 +137,40 @@ label {
 }
 
 .handle {
-  fill: #fff;
-  stroke: #000;
-  stroke-opacity: 0.5;
-  stroke-width: 1.25px;
+  fill: #E9C880;
 }
 
 .median {
   stroke-width: 1px;
   stroke: #666;
-  stroke-dasharray: 5;
+  stroke-dasharray: 4;
 }
 
-.medianLabel {
+.median-label {
   fill: #666;
   font-size: 10px;
+}
+
+.grid line {
+  stroke: #CCC;
+  stroke-opacity: 1;
+  stroke-dasharray: 2,3;
+  shape-rendering: crispEdges;
+}
+
+.grid path {
+  stroke-width: 0;
+}
+
+.axis {
+  line,
+  path {
+    //stroke: #999;
+    stroke-width: 0;
+  }
+  text{
+    fill: #999;
+  } 
 }
 
 .tooltip {
@@ -187,6 +205,10 @@ label {
       padding: 10px 5px;
     }
   }
+  .map-regions{
+    fill: #F2F2F2;
+    stroke: #B7B7B7;
+  }
   .tweetLayer,
   .eventLayer{
     transition: 0.3s all ease;
@@ -219,16 +241,6 @@ label {
   }
 }
 
-.axis {
-  line,
-  path {
-    stroke: #999;
-  }
-  text{
-    fill: #999;
-  } 
-}
-
 .tweet-marker{
   fill-opacity: 0.5;
   fill: #41B3E6;
@@ -240,6 +252,10 @@ label {
   fill: #F7941E;
 }
 
+.tweet-bar,
+.event-bar{
+  transition: 0.5s opacity ease;
+}
 
 @media only screen and (max-width: 767px) {
 	.logos {

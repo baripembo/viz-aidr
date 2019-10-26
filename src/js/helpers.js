@@ -27,9 +27,7 @@ function hxlProxyToJSON(input){
 }
 
 function startOfWeek(date) {
-  //console.log(date, date.getDate(), date.getDay())
   var diff = date.getDate() - date.getDay();
-  //console.log(new Date(date.setDate(diff)))
   return new Date(date.setDate(diff)); 
 }
 
@@ -40,4 +38,34 @@ function closestSunday(d) {
   d.setDate(closestSun);
   d.setHours(0,0,0,0);
   return d;
+}
+
+function skipTicks(ticks) {
+  ticks.each(function(_,i){
+    if (i%2 !== 0) d3.select(this).remove();
+  });
+}
+
+function wrap(text, width) {
+  text.each(function() {
+    var text = d3.select(this),
+        words = text.text().split(/\s+/).reverse(),
+        word,
+        line = [],
+        lineNumber = 0,
+        lineHeight = 1.1, // ems
+        y = text.attr("y"),
+        dy = parseFloat(text.attr("dy")),
+        tspan = text.text(null).append("tspan").attr("x", 10).attr("y", y).attr("dy", dy + "em");
+    while (word = words.pop()) {
+      line.push(word);
+      tspan.text(line.join(" "));
+      if (tspan.node().getComputedTextLength() > width) {
+        line.pop();
+        tspan.text(line.join(" "));
+        line = [word];
+        tspan = text.append("tspan").attr("x", 10).attr("y", y).attr("dy", ++lineNumber * lineHeight + dy + "em").text(word);
+      }
+    }
+  });
 }

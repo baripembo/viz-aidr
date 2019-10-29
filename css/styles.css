@@ -43,16 +43,15 @@
   .col-12 {
     grid-column: 1 / -1; } }
 
+.loader {
+  font-size: 11px;
+  text-align: center; }
+
 .sp {
   clear: both;
   height: 32px;
-  left: 50%;
-  margin-left: -16px;
-  position: absolute;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  width: 32px;
-  z-index: 1; }
+  margin: 0 auto 5px;
+  width: 32px; }
 
 /* Spinner Circle Rotation */
 .sp-circle {
@@ -92,11 +91,6 @@ body {
   margin: 0;
   padding: 0; }
 
-main,
-footer {
-  opacity: 0;
-  transition: 0.5s all ease; }
-
 main {
   flex: 1; }
 
@@ -119,11 +113,8 @@ h1 {
   margin-top: 20px;
   text-align: center; }
 
-.intro p {
-  margin: 0 auto;
-  padding-bottom: 30px;
-  text-align: center;
-  width: 75%; }
+.intro {
+  padding-bottom: 30px; }
 
 label,
 .label,
@@ -138,13 +129,22 @@ label {
   font-weight: bold;
   text-transform: uppercase; }
 
+#vis,
+#map {
+  opacity: 0;
+  transition: 0.5s all ease; }
+
 #vis {
+  min-height: 200px;
   margin-top: -60px;
   position: relative; }
 
-#timeSlider {
+#countryFilter {
   position: absolute;
-  top: 152px; }
+  top: 40px; }
+
+#timeSlider {
+  position: absolute; }
 
 #play-button {
   position: absolute;

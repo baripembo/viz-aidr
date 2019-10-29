@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta charset='utf-8' />
-    <title>AIDR</title>
+    <title>Mapping Education Insecurity</title>
     <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
     <link rel='icon' type='image/png' href='https://data.humdata.org/images/icons/hdx.ico' />
     <link href='https://fonts.googleapis.com/css?family=PT+Sans:400,700' rel='stylesheet'>
@@ -15,19 +15,25 @@
 
   <body>
 
-<!--     <p id="value"></p>
-<div id="slider"></div> -->
-    <div class="sp sp-circle"></div>
-
     <main>
       <div class='grid-container'>
         <div class='col-12'>
           <div class='intro'>
-            <h1>AIDR Education Insecurity Tweets</h1>
-            <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos.</p>
+            <h1>Mapping Education Insecurity</h1>
+            <p>The OCHA Centre for Humanitarian Data is partnering with the Education Above All Foundation (EAA) and the Qatar Computing Research Institute (QCRI) at Hamad bin Khalifa University to increase access to timely data about attacks on education and education insecurity. Our teams are working together to adapt QCRI's Artificial Intelligence for Disaster Response (AIDR) platform to identify and categorize information about attacks on education communicated via Twitter.</p>
+            <p>In the visualization below, the blue circles represent the number of tweets we have identified about attacks on education in a given week. The circles are centered on the country that is the subject of the tweet. You can move the time slider to focus in on a given week and see changes over time, or you can keep the slider on the far left to see all tweets over the entire reporting period.</p> 
+            <p>We have also included a second layer (orange triangles) representing verified reports of attacks on education as collected by the Armed Conflict Location & Event Data Project (ACLED).</p>
+            <p>For clarity, we have intentionally excluded tweets about countries where ACLED does not collect any information (for example, the United States and Canada). For a full list of the countries that are covered by ACLED (and by this data visualization), please click here.</p>
+            <p>Thanks to the generous support of EAA, this visualization will be updated on a weekly basis throughout 2019 and 2020.</p>
+          </div>
+          <div class='loader'>
+            <div class="sp sp-circle"></div>
+            Loading data...
           </div>
           <div id="vis">
-            <!-- <button id="play-button">Play</button> -->
+            <!-- <select id="countryFilter">
+              <option value="">All</option>
+            </select> -->
             <div id='aidrChart'></div>
             <div id='acledChart'></div>
             <div id='timeSlider'></div>
@@ -36,12 +42,12 @@
           <div id='map'> 
             <div class='map-controls'>
               <div class='layers'>
-                <label class='labelHeader'>Layers</label>
+                <label class='label-header'>Layers</label>
                 <label><input type="checkbox" id="aidrLayer" checked> Tweets</label>
                 <label><input type="checkbox" id="acledLayer" checked> Events</label>
               </div>
               <div class='legend'>
-                <label class='labelHeader'>Legend</label>
+                <label class='label-header'>Legend</label>
                 <g><circle r="4.316777418353244" transform="translate(135.84073464102067,329.67622184079863)" fill-opacity="0.5" fill="#41B3E6" stroke="#41B3E6"></circle></g>
               </div>
               <!-- <div class="zoom">
@@ -57,14 +63,17 @@
     <footer>
       <div class='grid-container'>
         <div class='col-12 logos'>
-          <a href='http://aidr.qcri.org' target='_blank'>
-            <img height='45' src='assets/logo-aidr.png'>
+          <a href='https://centre.humdata.org' target='_blank'>
+            <img height='45' src='assets/logo-centre.png'>
+          </a>
+          <a href='https://unocha.org' target='_blank'>
+            <img height='28' src='assets/logo-ocha.png'>
           </a>
           <a href='https://educationaboveall.org' target='_blank'>
             <img height='45' src='assets/logo-eaa.png'>
           </a>
-          <a href='https://data.humdata.org' target='_blank'>
-            <img height='28' src='assets/logo-hdx.png'>
+          <a href='http://aidr.qcri.org' target='_blank'>
+            <img height='45' src='assets/logo-aidr.png'>
           </a>
         </div>
       </div>

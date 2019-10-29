@@ -22,12 +22,6 @@ body {
 	padding: 0;
 }
 
-main,
-footer {
-  opacity: 0;
-  transition: 0.5s all ease;
-}
-
 main {
 	flex: 1;
 }
@@ -56,11 +50,8 @@ h1 {
   text-align: center;
 }
 
-.intro p{
-  margin: 0 auto;
+.intro {
   padding-bottom: 30px;
-  text-align: center;
-  width: 75%;
 }
 
 label,
@@ -79,14 +70,25 @@ label {
   text-transform: uppercase;
 }
 
+#vis,
+#map {
+  opacity: 0;
+  transition: 0.5s all ease;
+}
+
 #vis {
+  min-height: 200px;
   margin-top: -60px;
   position: relative;
 }
 
+#countryFilter {
+  position: absolute;
+  top: 40px;
+}
+
 #timeSlider {
   position: absolute;
-  top: 152px;
 }
 
 #play-button {

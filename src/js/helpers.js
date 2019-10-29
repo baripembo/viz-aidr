@@ -26,11 +26,13 @@ function hxlProxyToJSON(input){
   return output;
 }
 
+//find start of week date
 function startOfWeek(date) {
   var diff = date.getDate() - date.getDay();
   return new Date(date.setDate(diff)); 
 }
 
+//find closest sunday
 function closestSunday(d) {
   var prevSun = d.getDate() - d.getDay();
   var nextSun = prevSun + 7;
@@ -40,12 +42,20 @@ function closestSunday(d) {
   return d;
 }
 
+//skip every other tick
 function skipTicks(ticks) {
   ticks.each(function(_,i){
     if (i%2 !== 0) d3.select(this).remove();
   });
 }
 
+//create grid lines in y axis function
+function make_y_gridlines() {   
+  return d3.axisLeft(y)
+    .ticks(5)
+}
+
+//wrap svg text
 function wrap(text, width) {
   text.each(function() {
     var text = d3.select(this),

@@ -1,7 +1,7 @@
 $( document ).ready(function() {
   let isMobile = $(window).width()<600? true : false;
   let aidrPath = 'https://proxy.hxlstandard.org/data.objects.json?strip-headers=on&url=https%3A%2F%2Fdocs.google.com%2Fspreadsheets%2Fd%2F10gm6NsagysRfcUV1i9y7r6vCXzQd9xBf5H-5z5CFrzM%2Fedit%23gid%3D975970481';
-  let acledPath = 'data/2019-acled-education.csv';//https://proxy.hxlstandard.org/data/acbeef.csv';
+  let acledPath = 'https://proxy.hxlstandard.org/data/acbeef.csv';
   let geomPath = 'data/worldmap.json';
   let coordPath = 'data/coordinates.csv';
 
@@ -12,27 +12,30 @@ $( document ).ready(function() {
   var numFormat = d3.format(",");
   var shortNumFormat = d3.format(".2s");
   var viewportWidth = $('.grid-container').width();
+  var startDate, endDate;
   
   ////////// slider //////////
   var slider, label, handle, x;
   var moving = false;
-  var currentValue = 0;
   var targetValue = 0;
-  var startDate, endDate;
-  var playButton = d3.select("#play-button");
+  //var playButton = d3.select("#play-button");
 
   function createSlider() {
-    var margin = {top: 0, right: 83, bottom: 50, left: 48},
+    var margin = {top: 0, right: 82, bottom: 50, left: 48},
       width = viewportWidth - margin.left - margin.right,
       height = 60 - margin.top - margin.bottom;
-
     targetValue = width;
+
+    //position slider
+    $("#timeSlider").css("top", $('#aidrChart').height()-43);
 
     var svg = d3.select("#timeSlider")
       .append("svg")
       .attr("width", width + margin.left + margin.right)
       .attr("height", height + margin.top + margin.bottom);
 
+    //go back one week from startDate
+    //use this selection to trigger "All Dates" view
     var temp = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
     temp.setDate(temp.getDate() - 7);
 
@@ -49,19 +52,17 @@ $( document ).ready(function() {
       .attr("class", "track")
       .attr("x1", x.range()[0])
       .attr("x2", x.range()[1])
-      // .select(function() { return this.parentNode.appendChild(this.cloneNode(true)); })
-      //   .attr("class", "track-inset")
       .select(function() { return this.parentNode.appendChild(this.cloneNode(true)); })
         .attr("class", "track-overlay")
         .call(d3.drag()
           .on("start.interrupt", function() { slider.interrupt(); })
           .on("end", function() {
-            currentValue = Math.round(x.invert(d3.event.x));
-            update(closestSunday(new Date(currentValue)), true); //snap slider to closest sunday
+            var value = Math.round(x.invert(d3.event.x));
+            updateSlider(closestSunday(new Date(value)), true); //snap slider to closest sunday (start of week)
           })
           .on("drag", function() {
-            currentValue = Math.round(x.invert(d3.event.x));
-            update(currentValue); 
+            var value = Math.round(x.invert(d3.event.x));
+            updateSlider(value); 
           })
         );
 
@@ -81,34 +82,70 @@ $( document ).ready(function() {
       .attr("class", "handle")
       .attr("r", 9);
 
-    // label = slider.append("text")  
-    //   .attr("class", "label")
-    //   .attr("text-anchor", "middle")
-    //   .text(formatDate(startDate))
-    //   .attr("transform", "translate(0," + (-25) + ")")
-
-
-
     //show every other tick for legibility
     var ticks = d3.selectAll(".ticks text");
     ticks.each(function(_,i){
-      if (i==0) d3.select(this).text('All Dates'); //set first tick to show all dates
+      if (i==0) d3.select(this).text('All Dates'); //use first tick to trigger show all dates
       if (i%2 !== 0) d3.select(this).remove();
     });
   }
 
-  // gridlines in y axis function
-  function make_y_gridlines() {   
-    return d3.axisLeft(y)
-      .ticks(5)
+  function createCountryFilter(){
+    //format the country data from aidr and acled datasets
+    var countrySet = new Set();
+    aidrData.forEach(function(d){
+      if (d['#country+code+v_iso2']!="") 
+        countrySet.add(d['#country+code+v_iso2']);
+    });
+
+    acledData.forEach(function(d){
+      countrySet.add(d.country_code);
+    });
+
+    var countryList = [];
+    countrySet.forEach(function(code){
+      coordData.forEach(function(c){
+        if (code == c.country_code){
+          countryList.push({country_code:code, country:c.country});
+        }
+      });
+    });
+
+    countryList.sort(function(a, b){
+      var x = a.country.toLowerCase();
+      var y = b.country.toLowerCase();
+      if (x < y) {return -1;}
+      if (x > y) {return 1;}
+      return 0;
+    });
+
+    //create dropdown 
+    var dropdown = d3.select("#countryFilter")
+      .selectAll("option")
+      .data(countryList)
+      .enter().append("option")
+        .text(function(d) { return d.country; })
+        .attr("value", function (d) {
+          return d.country_code;
+        });
+
+    d3.select("#countryFilter").on("change",function(d){
+      var selected = d3.select("#countryFilter").node().value;
+      console.log(selected);
+    });
   }
 
-  function createAidrChart() {
+  function updateAidrChart(){
+
+  }
+
+
+  function createAidrChart(){
     var tweetData = d3.nest()
-      .key(function (d) { return d['#date+week_start']; })
+      .key(function (d){ return d['#date+week_start']; })
       .rollup(function(leaves) {
         var total = 0;
-        leaves.forEach(function(d) {
+        leaves.forEach(function(d){
           total += Number(d['#indicator+tweets']);
         })
         return total;
@@ -116,13 +153,13 @@ $( document ).ready(function() {
 
     //group the data by date and by lang
     var nested = d3.nest()
-      .key(function(d) {
+      .key(function(d){
         return d['#date+week_start'];
       })
-      .key(function(d) {
+      .key(function(d){
         return d['#meta+lang'];
       })
-      .rollup(function(leaves) {
+      .rollup(function(leaves){
         var total = 0;
         leaves.forEach(function(d) {
           total += Number(d['#indicator+tweets']);
@@ -133,10 +170,10 @@ $( document ).ready(function() {
 
     //flatten the nested data
     var tweetLangData = [];
-    nested.forEach(function(d) {
+    nested.forEach(function(d){
       var obj = {"date": d.key};
       tweetLangData.columns = [];
-      d.values.forEach(function(v) {
+      d.values.forEach(function(v){
         obj[v.key] = v.value;
         tweetLangData.columns.push(v.key);
       });
@@ -147,9 +184,9 @@ $( document ).ready(function() {
     var z = d3.scaleOrdinal().range(["#214189", "#41B3E6", "#9B6E50"]);
     z.domain(keys);
 
-    var margin = {top: 70, right: 60, bottom: 30, left: 60},
+    var margin = {top: 100, right: 60, bottom: 30, left: 60},
         width = viewportWidth - margin.left - margin.right,
-        height = 190 - margin.top - margin.bottom;
+        height = 220 - margin.top - margin.bottom;
 
     var svg = d3.select("#aidrChart")
       .append("svg")
@@ -161,27 +198,15 @@ $( document ).ready(function() {
     //x axis
     var x = d3.scaleBand()
       .range([0, width])
-      .domain(tweetData.map(function(d) { return formatDate(new Date(d.key)); }))
+      .domain(tweetData.map(function(d){ return formatDate(new Date(d.key)); }))
       .padding(0.3);
-    svg.append("g")
-      // .attr("class", "axis")
-      // .attr("transform", "translate(0," + height + ")")
-      // .call(d3.axisBottom(x))
-      // .selectAll("text")
-      //   .style("display", "none");
 
     //y axis
-    var tweetMax = d3.max(tweetData, function(d) { return +d.value; } );
+    var tweetMax = d3.max(tweetData, function(d){ return +d.value; } );
     var y = d3.scaleLinear()
       .domain([0, tweetMax])
       .range([ height, 0]);
     svg.append("g")
-      //.attr("class", "axis")
-      // .attr("transform", "translate("+ width +",0)")
-      // .call(d3.axisRight(y)
-      //   .tickFormat(shortNumFormat)
-      //   .tickSizeOuter(0)
-      //   .ticks(5));
       .attr("class", "grid")
       .call(d3.axisRight(y)
         .tickSize(width + 30)
@@ -201,18 +226,21 @@ $( document ).ready(function() {
     svg.selectAll("bar")
       .data(d3.stack().keys(keys)(tweetLangData))
       .enter().append("g")
-        .attr("fill", function(d) { return z(d.key); })
+        .attr("fill", function(d){ return z(d.key); })
       .selectAll("rect")
       .data(function(d) { return d; })
       .enter().append("rect")
         .attr("class", "tweet-bar")
-        .attr("x", function(d) { return x(formatDate(new Date(d.data.date))); })
-        .attr("y", function(d) { return y(d[1]); })
-        .attr("height", function(d) { return y(d[0]) - y(d[1]); })
+        .attr("x", function(d){ return x(formatDate(new Date(d.data.date))); })
+        .attr("y", function(d){ return y(d[1]); })
+        .attr("height", function(d){ 
+          var h = (isNaN(d[1])) ? 0 : y(d[0]) - y(d[1]);
+          return h; 
+        })
         .attr("width", x.bandwidth())
-      .on("mouseover", function() { tooltip.style("display", null); })
-      .on("mouseout", function() { tooltip.style("display", "none"); })
-      .on("mousemove", function(d) {
+      .on("mouseover", function(){ tooltip.style("display", null); })
+      .on("mouseout", function(){ tooltip.style("display", "none"); })
+      .on("mousemove", function(d){
         var en = (d.data.en==undefined) ? '0' : numFormat(d.data.en);
         var ar = (d.data.ar==undefined) ? '0' : numFormat(d.data.ar);
         var fr = (d.data.fr==undefined) ? '0' : numFormat(d.data.fr);
@@ -231,10 +259,10 @@ $( document ).ready(function() {
       .selectAll("g")
       .data(keys)
       .enter().append("g")
-        .attr("transform", function(d, i) { return "translate(-18," + i * 16 + ")"; });
+        .attr("transform", function(d, i){ return "translate(-20," + i * 16 + ")"; });
 
     legend.append("rect")
-      .attr("x", 15)
+      .attr("x", 38)
       .attr("width", 15)
       .attr("height", 15)
       .attr("fill", z);
@@ -244,10 +272,23 @@ $( document ).ready(function() {
       .attr("y", 10)
       .attr("dy", "0em")
       .attr("text-anchor", "start")
-      .text(function(d) { return d; });
+      .text(function(d) { 
+        var lang;
+        switch(d) {
+          case 'ar':
+            lang = 'Arabic';
+            break;
+          case 'fr':
+            lang = 'French'
+            break;
+          default:
+            lang = 'English'
+        }
+        return lang; 
+      });
 
     //median
-    var median = d3.median(tweetData, function(d) { return d.value; }); 
+    var median = d3.median(tweetData, function(d){ return d.value; }); 
     var line = svg.append("line")
       .attr("class", "median")
       .attr("x1", 0)
@@ -303,11 +344,10 @@ $( document ).ready(function() {
     skipTicks(ticks);
   }
 
-
-  function createAcledChart() {
+  function createAcledChart(){
     var eventData = d3.nest()
-      .key(function (d) { return d.event_start_date; })
-      .rollup(function(leaves) { return leaves.length;})
+      .key(function(d){ return d.event_start_date; })
+      .rollup(function(leaves){ return leaves.length;})
       .entries(acledData);
 
     var margin = {top: 5, right: 60, bottom: 20, left: 60},
@@ -324,7 +364,7 @@ $( document ).ready(function() {
     //x axis
     var x = d3.scaleBand()
       .range([0, width])
-      .domain(eventData.map(function(d) { return formatDate(new Date(d.key)); }))
+      .domain(eventData.map(function(d){ return formatDate(new Date(d.key)); }))
       .padding(0.3);
       svg.append("g")
         .attr("class", "axis")
@@ -335,16 +375,11 @@ $( document ).ready(function() {
           .style("display", "none");
 
     //y axis
-    var eventMax = d3.max(eventData, function(d) { return +d.value; } );
+    var eventMax = d3.max(eventData, function(d){ return +d.value; } );
     var y = d3.scaleLinear()
       .domain([0, eventMax])
       .range([0, height]);
       svg.append("g")
-        // .attr("class", "axis")
-        // .attr("transform", "translate("+ width +",0)")
-        // .call(d3.axisRight(y)
-        //   .tickSizeOuter(0)
-        //   .ticks(5));
         .attr("class", "grid")
         .call(d3.axisRight(y)
           .tickSize(width + 30)
@@ -366,14 +401,14 @@ $( document ).ready(function() {
       .enter()
       .append("rect")
         .attr("class", "event-bar")
-        .attr("x", function(d) { return x(formatDate(new Date(d.key))); })
-        .attr("y", function(d) { return y(2); })
+        .attr("x", function(d){ return x(formatDate(new Date(d.key))); })
+        .attr("y", function(d){ return y(2); })
         .attr("width", x.bandwidth())
         .attr("height", function(d) { return y(d.value); })
         .attr("fill", "#F7941E");
 
     //median
-    var median = d3.median(eventData, function(d) { return d.value; }); 
+    var median = d3.median(eventData, function(d){ return d.value; }); 
     var line = svg.append("line")
       .attr("class", "median")
       .attr("x1", 0)
@@ -409,10 +444,10 @@ $( document ).ready(function() {
   function initMap(){
     //group tweet data by country
     tweetCountryData = d3.nest()
-      .key(function(d) {
+      .key(function(d){
         return d['#country+code+v_iso2'];
       })
-      .rollup(function(leaves) {
+      .rollup(function(leaves){
         var total = 0;
         leaves.forEach(function(d) {
           total += Number(d['#indicator+tweets']);
@@ -440,7 +475,7 @@ $( document ).ready(function() {
   function getCoords(code){
     var coords = {};
     coordData.forEach(function(c){
-      if (c.country_code==code) {
+      if (c.country_code==code){
         coords.country = c.country;
         coords.lat = c.lat;
         coords.lon = c.lon;
@@ -484,7 +519,7 @@ $( document ).ready(function() {
       .on("wheel.zoom", null);
 
     //create log scale for circle markers
-    var tweetMax = d3.max(tweetCountryData, function(d) { return +d.value; } );
+    var tweetMax = d3.max(tweetCountryData, function(d){ return +d.value; } );
     rlog = d3.scaleLog()
       .domain([1, tweetMax])
       .range([2, 20]);
@@ -515,7 +550,7 @@ $( document ).ready(function() {
         .append("g")
         .append("circle")
         .attr("class", "tweet-marker")
-        .attr("r", function (d) { return (d.value==0) ? rlog(1) : rlog(d.value); })
+        .attr("r", function (d){ return (d.value==0) ? rlog(1) : rlog(d.value); })
         .attr("transform", function(d) { return "translate(" + projection([d.lon, d.lat]) + ")"; })
         .on("mouseover", function(d){ mapTooltip.style("display", null); })
         .on("mouseout", function(){ mapTooltip.style("display", "none"); })
@@ -537,7 +572,7 @@ $( document ).ready(function() {
         .append('path')
           .attr('class', 'event-marker')
           .attr("d", d3.symbol().type(d3.symbolTriangle).size(75))
-          .attr("transform", function(d) { return "translate(" + projection([d.lon, d.lat]) + ")"; })
+          .attr("transform", function(d){ return "translate(" + projection([d.lon, d.lat]) + ")"; })
           .on("mouseover", function(d){ mapTooltip.style("display", null); })
           .on("mouseout", function(){ mapTooltip.style("display", "none"); })
           .on("mousemove", function(d){
@@ -598,18 +633,23 @@ $( document ).ready(function() {
     var text = mapTooltip.select("text");
     var width = text.node().getBBox().width;
     var height = text.node().getBBox().height;
+    var newYPos, caratYPos, caratRot;
+    var yPosLimit = 40;
+    var newYPos = (yPos < yPosLimit) ? yPos + 30 : yPos - (height+30);
+    var caratYPos = (yPos < yPosLimit) ? -3.5 : height+13.5;
+    var caratRot = (yPos < yPosLimit) ? 0 : -180;
     text.html(content);
     text.call(wrap, 100);
-    mapTooltip.select("path").attr("transform", "translate(" + (width/2+10) + "," + (height+13.5) + "),rotate(-180)");
+    mapTooltip.select("path").attr("transform", "translate(" + (width/2+10) + "," + caratYPos + "),rotate(" + caratRot + ")");
     mapTooltip
-      .attr("transform", "translate(" + (xPos-width/2-10) + "," + (yPos - (height+30)) + ")")
+      .attr("transform", "translate(" + (xPos-width/2-10) + "," + newYPos + ")")
       .select("rect")
         .attr('width', width+20)
         .attr('height', height+10);
   }
 
   function createMapLegend(){
-    var tweetMax = d3.max(tweetCountryData, function(d) { return +d.value; } );
+    var tweetMax = d3.max(tweetCountryData, function(d){ return +d.value; } );
     var legend = d3.select(".legend").append('svg')
       .attr('width', 130)
       .attr('height', 115);
@@ -654,7 +694,7 @@ $( document ).ready(function() {
 
 
 
-  function update(h, onEnd) {
+  function updateSlider(h, onEnd) {
     // update handle position
     handle.attr("cx", x(h));
 
@@ -685,14 +725,14 @@ $( document ).ready(function() {
       .entries(aidrData);
 
     //show bar selections
-    d3.selectAll('.tweet-bar').each(function(d) {
+    d3.selectAll('.tweet-bar').each(function(d){
       var bar = d3.select(this);
       var date = new Date(d.data.date);
       var o = (date.getTime() == filterDate.getTime()) ? 1 : 0.4;
       bar.attr('opacity', o);
     });
 
-    d3.selectAll('.event-bar').each(function(d) {
+    d3.selectAll('.event-bar').each(function(d){
       var bar = d3.select(this);
       var date = new Date(d.key);
       var o = (date.getTime() == filterDate.getTime()) ? 1 : 0.4;
@@ -700,7 +740,7 @@ $( document ).ready(function() {
     });
 
     //update log scale for circle markers
-    var tweetMax = d3.max(tweetCountryData, function(d) { return +d.value; } );
+    var tweetMax = d3.max(tweetCountryData, function(d){ return +d.value; } );
     rlog = d3.scaleLog()
       .domain([1, tweetMax])
       .range([2, 20]);
@@ -709,7 +749,7 @@ $( document ).ready(function() {
     d3.select('.legend').select('.tweet-max').text(shortNumFormat(tweetMax));
 
     //update map tweet markers
-    mapsvg.selectAll('circle').each(function(m) {
+    mapsvg.selectAll('circle').each(function(m){
       var marker = d3.select(this);
       tweetCountryData.forEach(function(tweet){
         if (m.key == tweet.key) {
@@ -721,7 +761,7 @@ $( document ).ready(function() {
     });
 
     //update map event markers
-    mapsvg.selectAll('.event-marker').each(function(m, i) {
+    mapsvg.selectAll('.event-marker').each(function(m, i){
       var marker = d3.select(this);
       var o = (m.event_start_date.getTime() == filterDate.getTime()) ? 0.5 : 0;
       marker.style('fill-opacity', o);
@@ -736,7 +776,7 @@ $( document ).ready(function() {
       })
       .rollup(function(leaves) {
         var total = 0;
-        leaves.forEach(function(d) {
+        leaves.forEach(function(d){
           total += Number(d['#indicator+tweets']);
         })
         return total;
@@ -748,7 +788,7 @@ $( document ).ready(function() {
     d3.selectAll('.event-bar').attr('opacity', 1);
 
     //update log scale for circle markers
-    var tweetMax = d3.max(tweetCountryData, function(d) { return +d.value; } );
+    var tweetMax = d3.max(tweetCountryData, function(d){ return +d.value; } );
     rlog = d3.scaleLog()
       .domain([1, tweetMax])
       .range([2, 20]);
@@ -757,10 +797,10 @@ $( document ).ready(function() {
     d3.select('.legend').select('.tweet-max').text(shortNumFormat(tweetMax));
 
     //reset map tweet markers
-    mapsvg.selectAll('circle').each(function(m) {
+    mapsvg.selectAll('circle').each(function(m){
       var marker = d3.select(this);
       tweetCountryData.forEach(function(tweet){
-        if (m.key == tweet.key) {
+        if (m.key == tweet.key){
           marker.transition().duration(500).attr('r', function (d) { 
             return (tweet.value==0) ? rlog(1) : rlog(tweet.value); 
           })
@@ -778,7 +818,7 @@ $( document ).ready(function() {
       d3.csv(acledPath),
       d3.json(aidrPath),
       d3.json(geomPath)
-    ]).then(function(data) {
+    ]).then(function(data){
       //parse coord data
       coordData = [];
       data[0].forEach(function(d, i){
@@ -793,7 +833,7 @@ $( document ).ready(function() {
 
       //parse aidr data
       aidrData = data[2];
-      aidrData.forEach(function(d) {
+      aidrData.forEach(function(d){
         var date = d['#date+week_start'].split('-');
         d['#date+week_start'] = new Date(date[0], date[1]-1, date[2]);
         d['#date+week_start'].setHours(0,0,0,0);
@@ -822,21 +862,24 @@ $( document ).ready(function() {
           acledData.push(obj);
         }
       });
-
+        
       //parse geom data
       geomData = topojson.feature(data[3], data[3].objects.geom);
 
       //remove loader and show vis
-      $('.sp').hide();
-      $('main, footer').css('opacity', 1);
-      createSlider();
+      $('.loader').hide();
+      $('#vis, #map').css('opacity', 1);
+
+      //create vis elements
+      createCountryFilter();
       createAidrChart();
       createAcledChart();
+      createSlider();
       initMap();
     });
   }
 
-  function initTracking() {
+  function initTracking(){
     //initialize mixpanel
     let MIXPANEL_TOKEN = '';
     mixpanel.init(MIXPANEL_TOKEN);

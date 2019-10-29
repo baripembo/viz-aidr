@@ -1,15 +1,14 @@
+.loader {
+	font-size: 11px;
+	text-align: center;
+}
+
 .sp {
 	clear: both;
 	height: 32px;
-    left: 50%;
-	margin-left: -16px;
-	position: absolute;
-    top: 50%;
-    transform: translate(-50%,-50%);
+	margin: 0 auto 5px;
 	width: 32px;
-    z-index: 1;
 }
-
 
 /* Spinner Circle Rotation */
 .sp-circle {

@@ -83,30 +83,27 @@ function wrap(text, width) {
 $( document ).ready(function() {
   let isMobile = $(window).width()<600? true : false;
   let aidrPath = 'https://proxy.hxlstandard.org/data.objects.json?strip-headers=on&url=https%3A%2F%2Fdocs.google.com%2Fspreadsheets%2Fd%2F10gm6NsagysRfcUV1i9y7r6vCXzQd9xBf5H-5z5CFrzM%2Fedit%23gid%3D975970481';
-  let acledPath = 'https://proxy.hxlstandard.org/data/acbeef.csv';
+  let acledPath = 'https://proxy.hxlstandard.org/data/acbeef.csv';//https://proxy.hxlstandard.org/data/acbeef.csv
   let geomPath = 'data/worldmap.json';
   let coordPath = 'data/coordinates.csv';
-
   let aidrData, acledData, geomData, coordData = '';
 
   var formatDate = d3.timeFormat("%Y-%m-%d");
-  var parseDate = d3.timeParse("%m/%d/%y");
   var numFormat = d3.format(",");
   var shortNumFormat = d3.format(".2s");
   var viewportWidth = $('.grid-container').width();
   var startDate, endDate;
   
   ////////// slider //////////
-  var slider, label, handle, x;
-  var moving = false;
-  var targetValue = 0;
+  var slider, handle, x;
+  //var moving = false;
   //var playButton = d3.select("#play-button");
 
   function createSlider() {
     var margin = {top: 0, right: 82, bottom: 50, left: 48},
       width = viewportWidth - margin.left - margin.right,
-      height = 60 - margin.top - margin.bottom;
-    targetValue = width;
+      height = 60 - margin.top - margin.bottom,
+      targetValue = width;
 
     //position slider
     $("#timeSlider").css("top", $('#aidrChart').height()-43);
@@ -167,10 +164,23 @@ $( document ).ready(function() {
     //show every other tick for legibility
     var ticks = d3.selectAll(".ticks text");
     ticks.each(function(_,i){
-      if (i==0) d3.select(this).text('All Dates'); //use first tick to trigger show all dates
+      if (i==0) d3.select(this).text('ALL DATES'); //use first tick to trigger show all dates
       if (i%2 !== 0) d3.select(this).remove();
     });
   }
+
+  function updateSlider(h, onEnd) {
+    // update handle position
+    handle.attr("cx", x(h));
+
+    if (onEnd) {
+      if (h.getTime() < startDate.getTime())
+        resetMap();
+      else
+        updateMap(h);
+    }
+  }
+
 
   function createCountryFilter(){
     //format the country data from aidr and acled datasets
@@ -213,28 +223,15 @@ $( document ).ready(function() {
 
     d3.select("#countryFilter").on("change",function(d){
       var selected = d3.select("#countryFilter").node().value;
-      console.log(selected);
+      drawAidrChart(selected, 750);
+      drawAcledChart(selected, 750);
     });
   }
 
-  function updateAidrChart(){
 
-  }
-
-
-  function createAidrChart(){
-    var tweetData = d3.nest()
-      .key(function (d){ return d['#date+week_start']; })
-      .rollup(function(leaves) {
-        var total = 0;
-        leaves.forEach(function(d){
-          total += Number(d['#indicator+tweets']);
-        })
-        return total;
-      }).entries(aidrData);
-
+  function formatAidrData(country_code=""){
     //group the data by date and by lang
-    var nested = d3.nest()
+    var groups = d3.nest()
       .key(function(d){
         return d['#date+week_start'];
       })
@@ -244,7 +241,8 @@ $( document ).ready(function() {
       .rollup(function(leaves){
         var total = 0;
         leaves.forEach(function(d) {
-          total += Number(d['#indicator+tweets']);
+          if (country_code=="" || d['#country+code+v_iso2']==country_code)
+            total += Number(d['#indicator+tweets']);
         })
         return total;
       })
@@ -252,74 +250,76 @@ $( document ).ready(function() {
 
     //flatten the nested data
     var tweetLangData = [];
-    nested.forEach(function(d){
+    groups.forEach(function(d){
       var obj = {"date": d.key};
+      var total = 0;
       tweetLangData.columns = [];
       d.values.forEach(function(v){
         obj[v.key] = v.value;
+        total += v.value;
         tweetLangData.columns.push(v.key);
       });
+      obj["value"] = total;
       tweetLangData.push(obj);
     });
 
+    return tweetLangData;
+  }
+
+
+  function drawAidrChart(country_code="", speed=0) {
+    var tweetLangData = formatAidrData(country_code);
     var keys = tweetLangData.columns;
-    var z = d3.scaleOrdinal().range(["#214189", "#41B3E6", "#9B6E50"]);
-    z.domain(keys);
-
-    var margin = {top: 100, right: 60, bottom: 30, left: 60},
-        width = viewportWidth - margin.left - margin.right,
-        height = 220 - margin.top - margin.bottom;
-
-    var svg = d3.select("#aidrChart")
-      .append("svg")
-        .attr("width", width + margin.left + margin.right)
-        .attr("height", height + margin.top + margin.bottom)
-      .append("g")
-        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
-    //x axis
-    var x = d3.scaleBand()
-      .range([0, width])
-      .domain(tweetData.map(function(d){ return formatDate(new Date(d.key)); }))
-      .padding(0.3);
+    var max = d3.max(tweetLangData, function(d){ return +d.value; } );
+    var median = d3.median(tweetLangData, function(d){ return d.value; }); 
+    var barsSvg = d3.select("#aidrChart svg g.bars");
+    var svg = d3.select("#aidrChart svg g");
+    var tooltip = d3.select("#aidrChart .tooltip");
+    var numTicks = (max>999) ? 5 : 4;
 
     //y axis
-    var tweetMax = d3.max(tweetData, function(d){ return +d.value; } );
-    var y = d3.scaleLinear()
-      .domain([0, tweetMax])
-      .range([ height, 0]);
-    svg.append("g")
-      .attr("class", "grid")
-      .call(d3.axisRight(y)
-        .tickSize(width + 30)
-        .tickFormat("")
-        .ticks(5));
+    max = (max<1) ? 1 : max;
+    aidr.y.domain([0, max]).nice();
 
-    svg.append("g")
-      .attr("class", "axis")
-      .attr("transform", "translate("+ width +",0)")
-      .call(d3.axisRight(y)
-        .tickFormat(shortNumFormat)
-        .ticks(5))
+    svg.selectAll(".y-grid").transition().duration(speed)
+      .call(d3.axisRight(aidr.y)
+        .tickSize(aidr.width + 30)
+        .tickFormat("")
+        .ticks(numTicks));
+
+    svg.selectAll(".y-axis").transition().duration(speed)
+      .call(d3.axisRight(aidr.y)
+        .tickFormat(function(d) { return (max>999) ? shortNumFormat(d) : d; })
+        .ticks(numTicks));
+
+    svg.selectAll(".tick")
       .selectAll("text")
         .attr("dy", -4);
 
+    //skip ticks
+    if (max>999){
+      skipTicks(d3.selectAll("#aidrChart .grid line"));
+      skipTicks(d3.selectAll("#aidrChart .y-axis text"));
+    }
+
     //bars
-    svg.selectAll("bar")
-      .data(d3.stack().keys(keys)(tweetLangData))
-      .enter().append("g")
-        .attr("fill", function(d){ return z(d.key); })
-      .selectAll("rect")
-      .data(function(d) { return d; })
-      .enter().append("rect")
-        .attr("class", "tweet-bar")
-        .attr("x", function(d){ return x(formatDate(new Date(d.data.date))); })
-        .attr("y", function(d){ return y(d[1]); })
-        .attr("height", function(d){ 
-          var h = (isNaN(d[1])) ? 0 : y(d[0]) - y(d[1]);
-          return h; 
-        })
-        .attr("width", x.bandwidth())
+    var group = barsSvg.selectAll("g.layer")
+      .data(d3.stack().keys(keys)(tweetLangData));
+
+    group.exit().remove();
+
+    group.enter().append("g")
+      .classed("layer", true)
+      .attr("fill", function(d){ return aidr.z(d.key); });
+
+    var bars = barsSvg.selectAll("g.layer").selectAll("rect")
+      .data(function(d) { return d; });
+
+    bars.exit().remove();
+
+    bars.enter().append("rect")
+      .attr("class", "bar tweet-bar")
+      .merge(bars)
       .on("mouseover", function(){ tooltip.style("display", null); })
       .on("mouseout", function(){ tooltip.style("display", "none"); })
       .on("mousemove", function(d){
@@ -332,7 +332,83 @@ $( document ).ready(function() {
         tooltip.select("foreignObject").html(
           "English: "+ en + "<br>Arabic: "+ ar + "<br>French: "+ fr
         );
+      })
+    .transition().duration(speed)
+      .attr("x", function(d){ return aidr.x(formatDate(new Date(d.data.date))); })
+      .attr("y", function(d){ return aidr.y(d[1]); })
+      .attr("width", aidr.x.bandwidth())
+      .attr("height", function(d){ 
+        var h = (isNaN(d[1])) ? 0 : aidr.y(d[0]) - aidr.y(d[1]);
+        return h; 
       });
+
+    //median
+    svg.selectAll(".median")
+      .transition().duration(speed)
+      .attr("y1", aidr.y(median))
+      .attr("y2", aidr.y(median));
+
+    svg.selectAll(".median-label")
+      .html("MEDIAN " + numFormat(Math.round(median)))
+      .transition().duration(speed)
+      .attr("transform", "translate(" + (aidr.width) + "," + aidr.y(median) + ")");
+  }
+
+
+  var aidr = {};
+  function createAidrChart(){
+    var tweetLangData = formatAidrData();
+    var keys = tweetLangData.columns;
+    aidr.z = d3.scaleOrdinal().range(["#214189", "#41B3E6", "#9B6E50"]);
+    aidr.z.domain(keys);
+
+    var margin = {top: 100, right: 60, bottom: 30, left: 60},
+        width = viewportWidth - margin.left - margin.right,
+        height = 220 - margin.top - margin.bottom;
+
+    aidr.width = width;
+
+    //chart
+    var svg = d3.select("#aidrChart")
+      .append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+      .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    //x axis
+    aidr.x = d3.scaleBand()
+      .range([0, width])
+      .domain(tweetLangData.map(function(d){ return formatDate(new Date(d.date)); }))
+      .padding(0.3);
+
+    //y axis
+    aidr.y = d3.scaleLinear()
+      .range([ height, 0]);
+
+    svg.append("g")
+      .attr("class", "grid y-grid");
+
+    svg.append("g")
+      .attr("class", "axis y-axis")
+      .attr("transform", "translate("+ width +",0)");
+
+    //bars
+    svg.append("g")
+      .attr("class", "bars");
+
+    //median
+    var line = svg.append("line")
+      .attr("class", "median")
+      .attr("x1", 0)
+      .attr("x2", width-9)
+
+    svg.append("text")
+      .attr("x", -9)
+      .attr("y", -14)
+      .attr("dy", "1em")
+      .attr("text-anchor", "end")
+      .attr("class", "median-label")
 
     //legend
     var legend = svg.append("g")
@@ -347,7 +423,7 @@ $( document ).ready(function() {
       .attr("x", 38)
       .attr("width", 15)
       .attr("height", 15)
-      .attr("fill", z);
+      .attr("fill", aidr.z);
 
     legend.append("text")
       .attr("x", 0)
@@ -369,29 +445,9 @@ $( document ).ready(function() {
         return lang; 
       });
 
-    //median
-    var median = d3.median(tweetData, function(d){ return d.value; }); 
-    var line = svg.append("line")
-      .attr("class", "median")
-      .attr("x1", 0)
-      .attr("y1", y(median))
-      .attr("x2", width-9)
-      .attr("y2", y(median));
-
-    svg.append("text")
-      .attr("transform", "translate(" + (width) + "," + y(median) + ")")
-      .attr("x", -9)
-      .attr("y", -14)
-      .attr("dy", "1em")
-      .attr("text-anchor", "end")
-      .attr("class", "median-label")
-      .html("MEDIAN " + numFormat(Math.round(median)));
-
     //chart title
     svg.append("text")
-      .attr("transform", "translate(0,0)")
-      .attr("x", -20)
-      .attr("y", -20)
+      .attr("transform", "translate(-20,-20)")
       .attr("dy", "1em")
       .attr("text-anchor", "start")
       .attr("class", "label-header")
@@ -419,22 +475,93 @@ $( document ).ready(function() {
       .attr("height", 60)
       .append("xhtml:div");
 
-    var gridlines = d3.selectAll(".grid line");
-    skipTicks(gridlines);
-
-    var ticks = d3.selectAll("#aidrChart .axis text");
-    skipTicks(ticks);
+    drawAidrChart();
   }
 
-  function createAcledChart(){
+
+  //ACLED chart
+  function formatAcledData(country_code=""){
     var eventData = d3.nest()
       .key(function(d){ return d.event_start_date; })
-      .rollup(function(leaves){ return leaves.length;})
+      .rollup(function(leaves){ 
+        var total = 0;
+        leaves.forEach(function(l){
+          if (country_code=="" || l.country_code==country_code)
+            total++;
+        });
+        return total;
+      })
       .entries(acledData);
+    return eventData;
+  }
 
+  function drawAcledChart(country_code="", speed=0){
+    var eventData = formatAcledData(country_code);
+    var max = d3.max(eventData, function(d){ return +d.value; } );
+    var median = d3.median(eventData, function(d){ return d.value; }); 
+    var barsSvg = d3.select("#acledChart svg g.bars");
+    var svg = d3.select("#acledChart svg g");
+    var tooltip = d3.select("#acledChart .tooltip");
+    var numTicks = (max>999) ? 5 : 4;
+
+    //y axis
+    max = (max<1) ? 1 : max;
+    acled.y.domain([0, max]).nice();
+
+    svg.selectAll(".y-grid").transition().duration(speed)
+      .call(d3.axisRight(acled.y)
+        .tickSize(acled.width + 30)
+        .tickFormat("")
+        .ticks(numTicks));
+
+    svg.selectAll(".y-axis").transition().duration(speed)
+      .call(d3.axisRight(acled.y)
+        .tickFormat(function(d) { return (max>999) ? shortNumFormat(d) : d; })
+        .ticks(numTicks));
+
+    svg.selectAll(".tick")
+      .selectAll("text")
+        .attr("dy", 11);
+
+    //skip ticks
+    skipTicks(d3.selectAll("#acledChart .grid line"));
+    skipTicks(d3.selectAll("#acledChart .y-axis text"));
+
+    var bar = barsSvg.selectAll(".bar")
+      .data(eventData);
+
+    bar.exit().remove();
+
+    bar.enter().append("rect")
+      .attr("class", "bar event-bar")
+      .merge(bar)
+      .transition().duration(speed)
+        .attr("x", function(d){ return acled.x(formatDate(new Date(d.key))); })
+        .attr("y", function(d){ return acled.y(0); })
+        .attr("width", acled.x.bandwidth())
+        .attr("height", function(d) { return acled.y(d.value); })
+        .attr("fill", "#F7941E");   
+
+    //median
+    svg.selectAll(".median")
+      .transition().duration(speed)
+      .attr("y1", acled.y(median))
+      .attr("y2", acled.y(median))
+
+    svg.selectAll(".median-label")
+      .html("MEDIAN " + numFormat(Math.round(median)))
+      .transition().duration(speed)
+        .attr("transform", "translate(" + (acled.width) + "," + acled.y(median) + ")")
+  }
+
+  var acled = {}
+  function createAcledChart(){
+    var eventData = formatAcledData();
     var margin = {top: 5, right: 60, bottom: 20, left: 60},
       width = viewportWidth - margin.left - margin.right,
       height = 95 - margin.top - margin.bottom;
+
+    acled.width = width;
 
     var svg = d3.select("#acledChart")
       .append("svg")
@@ -444,74 +571,49 @@ $( document ).ready(function() {
         .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
     //x axis
-    var x = d3.scaleBand()
+    acled.x = d3.scaleBand()
       .range([0, width])
       .domain(eventData.map(function(d){ return formatDate(new Date(d.key)); }))
       .padding(0.3);
       svg.append("g")
-        .attr("class", "axis")
+        .attr("class", "axis x-axis")
         .attr("transform", "translate(0,0)")
-        .call(d3.axisTop(x)
+        .call(d3.axisTop(acled.x)
           .tickSizeOuter(0))
         .selectAll("text")
           .style("display", "none");
 
     //y axis
-    var eventMax = d3.max(eventData, function(d){ return +d.value; } );
-    var y = d3.scaleLinear()
-      .domain([0, eventMax])
+    acled.y = d3.scaleLinear()
       .range([0, height]);
-      svg.append("g")
-        .attr("class", "grid")
-        .call(d3.axisRight(y)
-          .tickSize(width + 30)
-          .tickFormat("")
-          .ticks(5));
+    
+    svg.append("g")
+      .attr("class", "grid y-grid");
 
-      svg.append("g")
-        .attr("class", "axis")
-        .attr("transform", "translate("+ width +",0)")
-        .call(d3.axisRight(y)
-          .tickFormat(shortNumFormat)
-          .ticks(5))
-        .selectAll("text")
-          .attr("dy", 11);
+    svg.append("g")
+      .attr("class", "axis y-axis")
+      .attr("transform", "translate("+ width +",0)");
 
     //bars
-    svg.selectAll("bar")
-      .data(eventData)
-      .enter()
-      .append("rect")
-        .attr("class", "event-bar")
-        .attr("x", function(d){ return x(formatDate(new Date(d.key))); })
-        .attr("y", function(d){ return y(2); })
-        .attr("width", x.bandwidth())
-        .attr("height", function(d) { return y(d.value); })
-        .attr("fill", "#F7941E");
+    svg.append("g")
+      .attr("class", "bars");
 
     //median
-    var median = d3.median(eventData, function(d){ return d.value; }); 
     var line = svg.append("line")
       .attr("class", "median")
       .attr("x1", 0)
-      .attr("y1", y(median))
-      .attr("x2", width - 9)
-      .attr("y2", y(median));
+      .attr("x2", width - 9);
 
     svg.append("text")
-      .attr("transform", "translate(" + (width) + "," + y(median) + ")")
       .attr("x", -9)
       .attr("y", 1)
       .attr("dy", "1em")
       .attr("text-anchor", "end")
-      .attr("class", "median-label")
-      .html("MEDIAN " + numFormat(Math.round(median)));
+      .attr("class", "median-label");
 
     //chart title
     svg.append("text")
-      .attr("transform", "translate(" + 0 + "," + height + ")")
-      .attr("x", -20)
-      .attr("y", -25)
+      .attr("transform", "translate(-20," + (height-18) + ")")
       .attr("dy", "1em")
       .attr("text-anchor", "start")
       .attr("class", "label-header")
@@ -520,6 +622,8 @@ $( document ).ready(function() {
     //skip ticks for legibility
     var ticks = d3.selectAll("#acledChart .axis text");
     skipTicks(ticks);
+
+    drawAcledChart();
   }
 
   var mapsvg, mapTooltip, tweetCountryData, eventCountryData, rlog;
@@ -771,22 +875,6 @@ $( document ).ready(function() {
       .attr('class', 'event-marker')
       .attr("d", d3.symbol().type(d3.symbolTriangle).size(75))
       .attr("transform", "translate(10,110)");
-  }
-
-
-
-
-  function updateSlider(h, onEnd) {
-    // update handle position
-    handle.attr("cx", x(h));
-
-    if (onEnd) {
-      console.log(h)
-      if (h.getTime() < startDate.getTime())
-        resetMap();
-      else
-        updateMap(h);
-    }
   }
 
   function updateMap(filterDate){

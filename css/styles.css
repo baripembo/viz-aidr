@@ -136,33 +136,20 @@ label {
 
 #vis {
   min-height: 200px;
-  margin-top: -60px;
+  margin-top: -40px;
   position: relative; }
 
-#countryFilter {
+.filter-container {
+  left: 40px;
   position: absolute;
-  top: 40px; }
+  top: 20px; }
+  .filter-container label {
+    padding-bottom: 5px; }
+  .filter-container select {
+    font-size: 12px; }
 
 #timeSlider {
   position: absolute; }
-
-#play-button {
-  position: absolute;
-  top: 140px;
-  left: 50px;
-  background: #f08080;
-  padding-right: 26px;
-  border-radius: 3px;
-  border: none;
-  color: white;
-  margin: 0;
-  padding: 0 12px;
-  width: 60px;
-  cursor: pointer;
-  height: 30px; }
-
-#play-button:hover {
-  background-color: #696969; }
 
 .ticks {
   font-size: 10px; }
@@ -212,7 +199,8 @@ label {
 
 .tooltip {
   font-size: 12px;
-  line-height: 16px; }
+  line-height: 16px;
+  z-index: 100; }
   .tooltip > * {
     fill: #E9C880;
     opacity: 0.8; }

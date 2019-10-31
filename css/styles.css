@@ -140,7 +140,6 @@ label {
   position: relative; }
 
 .filter-container {
-  left: 40px;
   position: absolute;
   top: 20px; }
   .filter-container label {

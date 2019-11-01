@@ -1,7 +1,7 @@
 $( document ).ready(function() {
   let isMobile = $(window).width()<600? true : false;
   let aidrPath = 'https://proxy.hxlstandard.org/data.objects.json?strip-headers=on&url=https%3A%2F%2Fdocs.google.com%2Fspreadsheets%2Fd%2F10gm6NsagysRfcUV1i9y7r6vCXzQd9xBf5H-5z5CFrzM%2Fedit%23gid%3D975970481';
-  let acledPath = 'https://proxy.hxlstandard.org/data/acbeef.csv';//https://proxy.hxlstandard.org/data/acbeef.csv
+  let acledPath = 'data/2019-acled-education.csv';//https://proxy.hxlstandard.org/data/acbeef.csv
   let geomPath = 'data/worldmap.json';
   let coordPath = 'data/coordinates.csv';
   let aidrData, acledData, geomData, coordData = '';

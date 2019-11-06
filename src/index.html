@@ -47,17 +47,22 @@
             <div class='map-controls'>
               <div class='layers'>
                 <label class='label-header'>Layers</label>
-                <label><input type="checkbox" id="aidrLayer" checked> Tweets</label>
-                <label><input type="checkbox" id="acledLayer" checked> Events</label>
+                <label class="input-container">Tweets
+                  <input type="checkbox" id="aidrLayer" checked="checked">
+                  <span class="checkmark"></span>
+                </label>
+                <label class="input-container">Events
+                  <input type="checkbox" id="acledLayer" checked="checked">
+                  <span class="checkmark"></span>
+                </label>
               </div>
               <div class='legend'>
                 <label class='label-header'>Legend</label>
-                <g><circle r="4.316777418353244" transform="translate(135.84073464102067,329.67622184079863)" fill-opacity="0.5" fill="#41B3E6" stroke="#41B3E6"></circle></g>
               </div>
-              <!-- <div class="zoom">
-                <button id="zoom_in">+</button>
-                <button id="zoom_out">-</button>
-              </div> -->
+            </div>            
+            <div class="zoom-controls">
+              <button id="zoom_in">+</button>
+              <button id="zoom_out">-</button>
             </div>
           </div>
         </div>

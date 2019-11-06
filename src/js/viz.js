@@ -1,7 +1,7 @@
 $( document ).ready(function() {
   let isMobile = $(window).width()<600? true : false;
-  let aidrPath = 'https://proxy.hxlstandard.org/data.objects.json?strip-headers=on&url=https%3A%2F%2Fdocs.google.com%2Fspreadsheets%2Fd%2F10gm6NsagysRfcUV1i9y7r6vCXzQd9xBf5H-5z5CFrzM%2Fedit%23gid%3D975970481';
-  let acledPath = 'data/2019-acled-education.csv';//https://proxy.hxlstandard.org/data/acbeef.csv
+  let aidrPath = 'data/aidr-data.json';//'https://proxy.hxlstandard.org/data.objects.json?strip-headers=on&url=https%3A%2F%2Fdocs.google.com%2Fspreadsheets%2Fd%2F10gm6NsagysRfcUV1i9y7r6vCXzQd9xBf5H-5z5CFrzM%2Fedit%23gid%3D975970481';
+  let acledPath = 'data/2019-acled-education.csv';//https://proxy.hxlstandard.org/data/acbeef.csv'
   let geomPath = 'data/worldmap.json';
   let coordPath = 'data/coordinates.csv';
   let aidrData, acledData, geomData, coordData = '';
@@ -139,10 +139,12 @@ $( document ).ready(function() {
           return d.country_code;
         });
 
-    d3.select("#countryFilter").on("change",function(d){
+
+    d3.select("#countryFilter").on("change",function(e){
       var selected = d3.select("#countryFilter").node().value;
       drawAidrChart(selected, 750);
       drawAcledChart(selected, 750);
+      zoomToCountry(selected);
     });
   }
 
@@ -160,7 +162,7 @@ $( document ).ready(function() {
         var total = 0;
         leaves.forEach(function(d) {
           if (country_code=="" || d['#country+code+v_iso2']==country_code)
-            total += Number(d['#indicator+tweets']);
+            total += Number(d['#meta+count']);
         })
         return total;
       })
@@ -234,7 +236,6 @@ $( document ).ready(function() {
       .data(function(d) { return d; });
 
     bars.exit().remove();
-
     bars.enter().append("rect")
       .attr("class", "bar tweet-bar")
       .merge(bars)
@@ -449,7 +450,6 @@ $( document ).ready(function() {
       .data(eventData);
 
     bar.exit().remove();
-
     bar.enter().append("rect")
       .attr("class", "bar event-bar")
       .merge(bar)
@@ -544,7 +544,8 @@ $( document ).ready(function() {
     drawAcledChart();
   }
 
-  var mapsvg, mapTooltip, tweetCountryData, eventCountryData, rlog;
+  var mapsvg, mapTooltip, tweetCountryData, eventCountryData, rlog, symbolLog, path;
+  var active = d3.select(null);
   function initMap(){
     //group tweet data by country
     tweetCountryData = d3.nest()
@@ -554,7 +555,7 @@ $( document ).ready(function() {
       .rollup(function(leaves){
         var total = 0;
         leaves.forEach(function(d) {
-          total += Number(d['#indicator+tweets']);
+          total += Number(d['#meta+count']);
         })
         return total;
       })
@@ -588,38 +589,26 @@ $( document ).ready(function() {
     return coords;
   }
 
+  var width, height, zoom, g, projection;
   function drawMap(){
-    var width = viewportWidth,
-      height = 450;
+    width = viewportWidth;
+    height = 450;
 
-    var projection = d3.geoMercator()
-      .center([0, 30])
-      .scale(width / 7)
+    projection = d3.geoMercator()
+      .center([50, 30])
+      .scale(width / 5.5)
       .translate([width / 2, height / 2]);
 
-    //var mapZoom = d3.zoom()
-      //.scaleExtent([1, 2])
-      //.on("zoom", function() {
-        // var transform = d3.event.transform;
+    zoom = d3.zoom()
+      .scaleExtent([1, 8])
+      .on("zoom", zoomed);
 
-        // mapsvg
-        //   //.selectAll('path')
-        //     //.attr("d", function(d) { return transform.k * projection([d.lon, d.lat]); });
-        //     .attr('transform', transform.toString());
-        
-        // mapsvg.selectAll('circle')
-        //   // .attr('cx', function(d) { return transform.k * projection([d.lon, d.lat])[0]; })
-        //   // .attr('cy', function(d) { return transform.k * projection([d.lon, d.lat])[1]; })
-        //   .attr('r', function(d) { return (d.value==0) ? rlog(1)/transform.k : rlog(d.value)/transform.k; });     
-
-        // mapsvg
-        //   .selectAll('path').style('stroke-width', (mapZoom.scaleExtent()[1]/transform.k) / 2);
-      //});
+    path = d3.geoPath().projection(projection);
 
     mapsvg = d3.select('#map').append('svg')
       .attr("width", width)
       .attr("height", height)
-      //.call(mapZoom)
+      .call(zoom)
       .on("wheel.zoom", null);
 
     //create log scale for circle markers
@@ -627,33 +616,38 @@ $( document ).ready(function() {
     rlog = d3.scaleLog()
       .domain([1, tweetMax])
       .range([2, 20]);
+
+    symbolScale = d3.scaleLinear()
+      .domain([1, 2,  3,  4,  5,  6,  7,  8])
+      .range([75, 20, 10, 5, 3, 2, 1, 1]);
         
     //draw map
-    var g = mapsvg.append("g")
-      .selectAll("path")
-      .data(geomData.features)
-      .enter()
-        .append("path")
-        .attr("class", "map-regions")
-        .attr("d", d3.geoPath().projection(projection))
-        .on("mouseover", function(){ mapTooltip.style("display", null); })
-        .on("mouseout", function(){ mapTooltip.style("display", "none"); })
-        .on("mousemove", function(d){
-          var text = d.properties.NAME;
-          var xPos = d3.mouse(this)[0];
-          var yPos = d3.mouse(this)[1];
-          createMapTooltip(text, xPos, yPos);
-        });
+    g = mapsvg.append("g");
+    g.selectAll("path")
+    .data(geomData.features)
+    .enter()
+      .append("path")
+      .attr("class", "map-regions")
+      .attr("d", path)
+      //.on("click", clicked)
+      .on("mouseover", function(){ mapTooltip.style("display", null); })
+      .on("mouseout", function(){ mapTooltip.style("display", "none"); })
+      .on("mousemove", function(d){
+        var text = d.properties.NAME;
+        var xPos = d3.mouse(this)[0];
+        var yPos = d3.mouse(this)[1];
+        createMapTooltip(text, xPos, yPos);
+      });
 
     //create tweet markers
-    var tweetMarker = mapsvg.append("g")
-      .attr("class", "tweetLayer")
-      .selectAll("g")
+    var tweetMarker = g.append("g")
+      .attr("class", "tweet-layer")
+      .selectAll(".tweet-marker")
       .data(tweetCountryData)
       .enter()
         .append("g")
         .append("circle")
-        .attr("class", "tweet-marker")
+        .attr("class", "marker tweet-marker")
         .attr("r", function (d){ return (d.value==0) ? rlog(1) : rlog(d.value); })
         .attr("transform", function(d) { return "translate(" + projection([d.lon, d.lat]) + ")"; })
         .on("mouseover", function(d){ mapTooltip.style("display", null); })
@@ -667,15 +661,16 @@ $( document ).ready(function() {
         });
 
     //create event markers
-    var eventMarker = mapsvg.append("g")
-      .attr("class", "eventLayer")
-      .selectAll("g")
+    var eventMarker = g.append("g")
+      .attr("class", "event-layer")
+      .selectAll(".event-marker")
       .data(acledData)
       .enter()
         .append("g")
-        .append('path')
-          .attr('class', 'event-marker')
+        .append("path")
+          .attr("class", "marker event-marker")
           .attr("d", d3.symbol().type(d3.symbolTriangle).size(75))
+          .attr("transform", "scale(1)")
           .attr("transform", function(d){ return "translate(" + projection([d.lon, d.lat]) + ")"; })
           .on("mouseover", function(d){ mapTooltip.style("display", null); })
           .on("mouseout", function(){ mapTooltip.style("display", "none"); })
@@ -698,13 +693,13 @@ $( document ).ready(function() {
       .attr("width", 120)
       .attr("height", 30);
     
-    mapTooltip.append('path')
-      .attr("d", d3.symbol().type(d3.symbolTriangle).size(75))
-      .attr("transform", "translate(50,33.5),rotate(-180)");
+    // mapTooltip.append('path')
+    //   .attr("d", d3.symbol().type(d3.symbolTriangle).size(75))
+    //   .attr("transform", "translate(50,33.5),rotate(-180)");
 
     mapTooltip.append("text")
       .attr("x", 10)
-      .attr("y", 16)
+      .attr("y", 18)
       .attr("dy", 0)
       .attr("width", 80)
       .attr("height", 20)
@@ -713,24 +708,66 @@ $( document ).ready(function() {
     //map layers
     d3.select("#aidrLayer").on("change", function(){
       var o = (d3.select(this).property("checked")) ? 1 : 0;
-      d3.select(".tweetLayer").style("opacity", o);
+      d3.select(".tweet-layer").style("opacity", o);
     });
     d3.select("#acledLayer").on("change", function(){
       var o = (d3.select(this).property("checked")) ? 1 : 0;
-      d3.select(".eventLayer").style("opacity", o);
+      d3.select(".event-layer").style("opacity", o);
     });
 
     //zoom controls
-    // d3.select("#zoom_in").on("click", function() {
-    //   console.log("zoom in")
-    //   mapZoom.scaleBy(mapsvg.transition().duration(500), 1.1);
-    // }); 
-    // d3.select("#zoom_out").on("click", function() {
-    //   console.log("zoom out")
-    //   mapZoom.scaleBy(mapsvg.transition().duration(500), 0.9);
-    // });
+    d3.select("#zoom_in").on("click", function() {
+      zoom.scaleBy(mapsvg.transition().duration(500), 1.5);
+    }); 
+    d3.select("#zoom_out").on("click", function() {
+      zoom.scaleBy(mapsvg.transition().duration(500), 0.5);
+    });
 
     createMapLegend();
+  }
+
+  function zoomed(){
+    const {transform} = d3.event;
+    if (!isNaN(transform.k)) {
+      g.attr("transform", transform);
+      g.attr("stroke-width", 1 / transform.k);
+
+      mapsvg.selectAll(".tweet-marker")
+        .transition().duration(0)
+        .attr("r", function (d){ return (d.value==0) ? rlog(1)/transform.k : rlog(d.value)/transform.k; });
+
+      mapsvg.selectAll(".event-marker")
+        .transition().duration(0)
+        .attr("d", d3.symbol().type(d3.symbolTriangle).size(symbolScale(transform.k)));
+    }
+  }
+
+  function clicked(d){
+    const [[x0, y0], [x1, y1]] = path.bounds(d);
+    //d3.event.stopPropagation();
+    mapsvg.transition().duration(750).call(
+      zoom.transform,
+      d3.zoomIdentity
+        .translate(width / 2, height / 2)
+        .scale(Math.min(8, 0.9 / Math.max((x1 - x0) / width, (y1 - y0) / height)))
+        .translate(-(x0 + x1) / 2, -(y0 + y1) / 2),
+      d3.mouse(mapsvg.node())
+    );
+  }
+
+  function zoomToCountry(country_code){
+    if (country_code==""){ //reset map zoom
+      mapsvg.transition()
+        .duration(750)
+        .call(zoom.transform, d3.zoomIdentity);
+    }
+    else{
+      geomData.features.forEach(function(c){
+        if (c.properties.ISO_A3==country_code){
+          clicked(c);
+        }
+      });
+    }
   }
 
   function createMapTooltip(content, xPos, yPos){
@@ -744,9 +781,10 @@ $( document ).ready(function() {
     var caratRot = (yPos < yPosLimit) ? 0 : -180;
     text.html(content);
     text.call(wrap, 100);
-    mapTooltip.select("path").attr("transform", "translate(" + (width/2+10) + "," + caratYPos + "),rotate(" + caratRot + ")");
+    //mapTooltip.select("path").attr("transform", "translate(" + (width/2+10) + "," + caratYPos + "),rotate(" + caratRot + ")");
     mapTooltip
-      .attr("transform", "translate(" + (xPos-width/2-10) + "," + newYPos + ")")
+      .attr("transform", "translate(20,20)")
+      //.attr("transform", "translate(" + (xPos-width/2-10) + "," + newYPos + ")")
       .select("rect")
         .attr('width', width+20)
         .attr('height', height+10);
@@ -805,7 +843,7 @@ $( document ).ready(function() {
         var total = 0;
         leaves.forEach(function(d) {
           if (d['#date+week_start'].getTime() == filterDate.getTime()) {
-            total += Number(d['#indicator+tweets']);
+            total += Number(d['#meta+count']);
           }
         })
         return total;
@@ -865,7 +903,7 @@ $( document ).ready(function() {
       .rollup(function(leaves) {
         var total = 0;
         leaves.forEach(function(d){
-          total += Number(d['#indicator+tweets']);
+          total += Number(d['#meta+count']);
         })
         return total;
       })

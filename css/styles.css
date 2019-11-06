@@ -197,8 +197,8 @@ label {
   fill: #999; }
 
 .tooltip {
-  font-size: 12px;
-  line-height: 16px;
+  font-size: 14px;
+  line-height: 18px;
   z-index: 100; }
   .tooltip > * {
     fill: #E9C880;
@@ -206,12 +206,13 @@ label {
 
 #map {
   border: 1px solid #CCC;
+  height: 450px;
   overflow: hidden;
   position: relative; }
   #map .map-controls {
-    background-color: rgba(255, 255, 255, 0.8);
-    bottom: 20px;
-    left: 20px;
+    bottom: 15px;
+    left: 15px;
+    padding: 5px;
     position: absolute;
     z-index: 100; }
     #map .map-controls .layers {
@@ -220,37 +221,39 @@ label {
       #map .map-controls .layers .labelHeader {
         padding-bottom: 3px; }
     #map .map-controls .legend {
+      background-color: rgba(255, 255, 255, 0.8);
       border: 1px solid #B7B7B7;
       margin-top: 5px;
       padding: 10px 5px; }
   #map .map-regions {
     fill: #F2F2F2;
     stroke: #B7B7B7; }
-  #map .tweetLayer,
-  #map .eventLayer {
+  #map .tweet-layer,
+  #map .event-layer {
     transition: 0.3s all ease; }
-  #map .controls {
+  #map .zoom-controls {
     position: absolute;
-    left: 15px;
-    top: 15px;
+    right: 15px;
+    bottom: 15px;
     display: grid;
     grid-gap: 5px; }
-  #map button {
-    width: 30px;
-    height: 30px;
-    font-size: 18px;
-    display: grid;
-    border-radius: 50% !important;
-    background: rgba(240, 240, 240, 0.8);
-    color: darkgrey;
-    border: 1px solid #aaaaaa;
-    user-select: none;
-    cursor: pointer;
-    box-sizing: border-box; }
-  #map button:active {
-    background: rgba(200, 200, 200, 0.8); }
-  #map button:focus {
-    outline: 0; }
+    #map .zoom-controls button {
+      width: 30px;
+      height: 30px;
+      font-size: 18px;
+      font-weight: bold;
+      display: grid;
+      border-radius: 50% !important;
+      background: #E9C880;
+      color: #FFF;
+      border: none;
+      user-select: none;
+      cursor: pointer;
+      box-sizing: border-box; }
+    #map .zoom-controls button:active {
+      background: rgba(200, 200, 200, 0.8); }
+    #map .zoom-controls button:focus {
+      outline: 0; }
 
 .tweet-marker {
   fill-opacity: 0.5;
@@ -264,6 +267,59 @@ label {
 .tweet-bar,
 .event-bar {
   transition: 0.5s opacity ease; }
+
+.input-container {
+  display: block;
+  position: relative;
+  padding-left: 22px;
+  padding-top: 3px;
+  margin-top: 4px;
+  cursor: pointer;
+  font-size: 10px;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none; }
+
+.input-container input {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  height: 0;
+  width: 0; }
+
+.checkmark {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 16px;
+  width: 16px;
+  background-color: #CCC; }
+
+.input-container:hover input ~ .checkmark {
+  background-color: #F2F2F2; }
+
+.input-container input:checked ~ .checkmark {
+  background-color: #E9C880; }
+
+.checkmark:after {
+  content: "";
+  position: absolute;
+  display: none; }
+
+.input-container input:checked ~ .checkmark:after {
+  display: block; }
+
+.input-container .checkmark:after {
+  left: 6px;
+  top: 3px;
+  width: 4px;
+  height: 9px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  -webkit-transform: rotate(45deg);
+  -ms-transform: rotate(45deg);
+  transform: rotate(45deg); }
 
 @media only screen and (max-width: 767px) {
   .logos .grid-container > div {

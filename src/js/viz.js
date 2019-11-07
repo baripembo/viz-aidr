@@ -1,12 +1,12 @@
 $( document ).ready(function() {
   let isMobile = $(window).width()<600? true : false;
-  let aidrPath = 'data/aidr-data.json';//'https://proxy.hxlstandard.org/data.objects.json?strip-headers=on&url=https%3A%2F%2Fdocs.google.com%2Fspreadsheets%2Fd%2F10gm6NsagysRfcUV1i9y7r6vCXzQd9xBf5H-5z5CFrzM%2Fedit%23gid%3D975970481';
+  let aidrPath = 'data/aidr-data.json';//'https://proxy.hxlstandard.org/data.objects.json?strip-headers=on&url=https%3A%2F%2Fdocs.google.com%2Fspreadsheets%2Fd%2F10gm6NsagysRfcUV1i9y7r6vCXzQd9xBf5H-5z5CFrzM%2Fedit%23gid%3D1806654635';
   let acledPath = 'data/acled-education.csv';//'https://proxy.hxlstandard.org/data/acbeef.csv';
   let geomPath = 'data/worldmap.json';
   let coordPath = 'data/coordinates.csv';
   let aidrData, acledData, geomData, coordData = '';
 
-  var formatDate = d3.timeFormat("%Y-%m-%d");
+  var formatDate = d3.timeFormat("%Y-%m");
   var numFormat = d3.format(",");
   var shortNumFormat = d3.format(".2s");
   var viewportWidth = $('.grid-container').width();
@@ -18,7 +18,7 @@ $( document ).ready(function() {
   //var playButton = d3.select("#play-button");
 
   function createSlider() {
-    var margin = {top: 0, right: 82, bottom: 30, left: 48},
+    var margin = {top: 0, right: 60, bottom: 30, left: 60},
       width = viewportWidth - margin.left - margin.right,
       height = 40 - margin.top - margin.bottom,
       targetValue = width;
@@ -31,10 +31,9 @@ $( document ).ready(function() {
       .attr("width", width + margin.left + margin.right)
       .attr("height", height + margin.top + margin.bottom);
 
-    //go back one week from startDate
+    //go back one month from startDate
     //use this selection to trigger "All Dates" view
-    var temp = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
-    temp.setDate(temp.getDate() - 7);
+    var temp = new Date(startDate.getFullYear(), startDate.getMonth()-1, startDate.getDate());
 
     x = d3.scaleTime()
       .domain([temp, endDate])
@@ -55,7 +54,8 @@ $( document ).ready(function() {
           .on("start.interrupt", function() { slider.interrupt(); })
           .on("end", function() {
             var value = Math.round(x.invert(d3.event.x));
-            updateSlider(closestSunday(new Date(value)), true); //snap slider to closest sunday (start of week)
+            updateSlider(value); 
+            //updateSlider(closestSunday(new Date(value)), true); //snap slider to closest sunday (start of week)
           })
           .on("drag", function() {
             var value = Math.round(x.invert(d3.event.x));
@@ -63,11 +63,13 @@ $( document ).ready(function() {
           })
         );
 
+        console.log(startDate, endDate)
+
     slider.insert("g", ".track-overlay")
       .attr("class", "ticks")
       .attr("transform", "translate(0," + 15 + ")")
       .selectAll("text")
-        .data(x.ticks(30))
+        .data(x.ticks())//d3.timeFormat.months, 12
         .enter()
         .append("text")
         .attr("x", x)
@@ -83,7 +85,7 @@ $( document ).ready(function() {
     var ticks = d3.selectAll(".ticks text");
     ticks.each(function(_,i){
       if (i==0) d3.select(this).text('ALL DATES'); //use first tick to trigger show all dates
-      if (i%2 !== 0) d3.select(this).remove();
+      //if (i%2 !== 0) d3.select(this).remove();
     });
   }
 
@@ -141,7 +143,7 @@ $( document ).ready(function() {
     //group the data by date and by lang
     var groups = d3.nest()
       .key(function(d){
-        return d['#date+week_start'];
+        return d['#date+month'];
       })
       .key(function(d){
         return d['#meta+lang'];
@@ -390,7 +392,7 @@ $( document ).ready(function() {
   //ACLED chart
   function formatAcledData(country_code=""){
     var eventData = d3.nest()
-      .key(function(d){ return d.event_start_date; })
+      .key(function(d){ return d.event_date; })
       .rollup(function(leaves){ 
         var total = 0;
         leaves.forEach(function(l){
@@ -917,7 +919,7 @@ $( document ).ready(function() {
     //update map event markers
     mapsvg.selectAll('.event-marker').each(function(m, i){
       var marker = d3.select(this);
-      var o = (m.event_start_date.getTime() == filterDate.getTime()) ? 0.5 : 0;
+      var o = (m.event_date.getTime() == filterDate.getTime()) ? 0.5 : 0;
       marker.style('fill-opacity', o);
     });
   }
@@ -977,10 +979,10 @@ $( document ).ready(function() {
       coordData = [];
       data[0].forEach(function(d, i){
         var obj = {
-          country: d['Country'],
-          country_code: d['Alpha-3 code'],
-          lon: d['Longitude (average)'], 
-          lat: d['Latitude (average)']
+          country: d['Preferred Term'],
+          country_code: d['ISO 3166-1 Alpha 3-Codes'],
+          lon: d['Longitude'], 
+          lat: d['Latitude']
         }
         coordData.push(obj);
       });
@@ -988,12 +990,11 @@ $( document ).ready(function() {
       //parse aidr data
       aidrData = data[2];
       aidrData.forEach(function(d){
-        var date = d['#date+week_start'].split('-');
-        d['#date+week_start'] = new Date(date[0], date[1]-1, date[2]);
-        d['#date+week_start'].setHours(0,0,0,0);
+        var date = d['#date+month'].split('-');
+        d['#date+month'] = new Date(date[0], date[1]-1);
       });
-      endDate = d3.max(aidrData.map(d=>d['#date+week_start']));
-      startDate = d3.min(aidrData.map(d=>d['#date+week_start']));
+      endDate = d3.max(aidrData.map(d=>d['#date+month']));
+      startDate = d3.min(aidrData.map(d=>d['#date+month']));
 
       //parse acled data
       acledData = [];
@@ -1004,14 +1005,11 @@ $( document ).ready(function() {
           if (c==d.iso3) included = true;
         });
         if (included){
-          var split = d.event_date.split('-');
-          var eventDate = new Date(split[0], split[1]-1 , split[2]);
-          eventDate.setHours(0,0,0,0);
-          var eventStartDate = startOfWeek(new Date(split[0], split[1]-1 , split[2]));
+          var split = d.month.split('-');
+          var eventDate = new Date(split[0], split[1]-1);
           if (eventDate >= startDate && eventDate <= endDate){
             var obj = {
               event_date: eventDate,
-              event_start_date: eventStartDate,
               event_type: d.event_type,
               country: d.country,
               country_code: d.iso3,

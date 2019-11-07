@@ -1,4 +1,80 @@
 window.$ = window.jQuery = require('jquery');
+var countryList = [
+    "DZA",
+    "AGO",
+    "BHR",
+    "BEN",
+    "BWA",
+    "IOT",
+    "BFA",
+    "BDI",
+    "CMR",
+    "CPV",
+    "CAF",
+    "TCD",
+    "COM",
+    "COG",
+    "COD",
+    "CIV",
+    "DJI",
+    "EGY",
+    "GNQ",
+    "ERI",
+    "ETH",
+    "ATF",
+    "GAB",
+    "GMB",
+    "GHA",
+    "GIN",
+    "GNB",
+    "IRQ",
+    "ISR",
+    "JOR",
+    "KEN",
+    "KWT",
+    "LBN",
+    "LSO",
+    "LBR",
+    "LBY",
+    "MDG",
+    "MWI",
+    "MLI",
+    "MRT",
+    "MUS",
+    "MYT",
+    "MAR",
+    "MOZ",
+    "NAM",
+    "NER",
+    "NGA",
+    "OMN",
+    "PSE",
+    "QAT",
+    "REU",
+    "RWA",
+    "SHN",
+    "STP",
+    "SAU",
+    "SEN",
+    "SYC",
+    "SLE",
+    "SOM",
+    "ZAF",
+    "SSD",
+    "SDN",
+    "SWZ",
+    "SYR",
+    "TZA",
+    "TGO",
+    "TUN",
+    "UGA",
+    "ARE",
+    "ESH",
+    "YEM",
+    "ZMB",
+    "ZWE"
+];
+
 function hxlProxyToJSON(input){
   var output = [];
   var keys=[]
@@ -82,8 +158,8 @@ function wrap(text, width) {
 }
 $( document ).ready(function() {
   let isMobile = $(window).width()<600? true : false;
-  let aidrPath = 'https://proxy.hxlstandard.org/data.objects.json?strip-headers=on&url=https%3A%2F%2Fdocs.google.com%2Fspreadsheets%2Fd%2F10gm6NsagysRfcUV1i9y7r6vCXzQd9xBf5H-5z5CFrzM%2Fedit%23gid%3D975970481';
-  let acledPath = 'https://proxy.hxlstandard.org/data/acbeef.csv';
+  let aidrPath = 'data/aidr-data.json';//'https://proxy.hxlstandard.org/data.objects.json?strip-headers=on&url=https%3A%2F%2Fdocs.google.com%2Fspreadsheets%2Fd%2F10gm6NsagysRfcUV1i9y7r6vCXzQd9xBf5H-5z5CFrzM%2Fedit%23gid%3D975970481';
+  let acledPath = 'data/acled-education.csv';//'https://proxy.hxlstandard.org/data/acbeef.csv';
   let geomPath = 'data/worldmap.json';
   let coordPath = 'data/coordinates.csv';
   let aidrData, acledData, geomData, coordData = '';
@@ -100,9 +176,9 @@ $( document ).ready(function() {
   //var playButton = d3.select("#play-button");
 
   function createSlider() {
-    var margin = {top: 0, right: 82, bottom: 50, left: 48},
+    var margin = {top: 0, right: 82, bottom: 30, left: 48},
       width = viewportWidth - margin.left - margin.right,
-      height = 60 - margin.top - margin.bottom,
+      height = 40 - margin.top - margin.bottom,
       targetValue = width;
 
     //position slider
@@ -183,27 +259,16 @@ $( document ).ready(function() {
 
 
   function createCountryFilter(){
-    //format the country data from aidr and acled datasets
-    var countrySet = new Set();
-    aidrData.forEach(function(d){
-      if (d['#country+code+v_iso2']!="") 
-        countrySet.add(d['#country+code+v_iso2']);
-    });
-
-    acledData.forEach(function(d){
-      countrySet.add(d.country_code);
-    });
-
-    var countryList = [];
-    countrySet.forEach(function(code){
+    var countries = [];
+    countryList.forEach(function(code){
       coordData.forEach(function(c){
         if (code == c.country_code){
-          countryList.push({country_code:code, country:c.country});
+          countries.push({country_code:code, country:c.country});
         }
       });
     });
 
-    countryList.sort(function(a, b){
+    countries.sort(function(a, b){
       var x = a.country.toLowerCase();
       var y = b.country.toLowerCase();
       if (x < y) {return -1;}
@@ -214,13 +279,12 @@ $( document ).ready(function() {
     //create dropdown 
     var dropdown = d3.select("#countryFilter")
       .selectAll("option")
-      .data(countryList)
+      .data(countries)
       .enter().append("option")
         .text(function(d) { return d.country; })
         .attr("value", function (d) {
           return d.country_code;
         });
-
 
     d3.select("#countryFilter").on("change",function(e){
       var selected = d3.select("#countryFilter").node().value;
@@ -360,6 +424,7 @@ $( document ).ready(function() {
   function createAidrChart(){
     var tweetLangData = formatAidrData();
     var keys = tweetLangData.columns;
+    keys.sort();
     aidr.z = d3.scaleOrdinal().range(["#214189", "#41B3E6", "#9B6E50"]);
     aidr.z.domain(keys);
 
@@ -535,6 +600,14 @@ $( document ).ready(function() {
     bar.enter().append("rect")
       .attr("class", "bar event-bar")
       .merge(bar)
+      .on("mouseover", function(){ tooltip.style("display", null); })
+      .on("mouseout", function(){ tooltip.style("display", "none"); })
+      .on("mousemove", function(d){
+        var xPosition = d3.mouse(this)[0] - 15;
+        var yPosition = d3.mouse(this)[1] + 14;
+        tooltip.attr("transform", "translate(" + xPosition + "," + yPosition + ")");
+        tooltip.select("foreignObject").html(d.value);
+      })
       .transition().duration(speed)
         .attr("x", function(d){ return acled.x(formatDate(new Date(d.key))); })
         .attr("y", function(d){ return acled.y(0); })
@@ -623,6 +696,28 @@ $( document ).ready(function() {
     var ticks = d3.selectAll("#acledChart .axis text");
     skipTicks(ticks);
 
+    //tooltip
+    var tooltip = svg.append("g")
+      .attr("class", "tooltip")
+      .style("display", "none");
+        
+    tooltip.append("rect")
+      .attr("rx", 3)
+      .attr("ry", 3)
+      .attr("width", 40)
+      .attr("height", 30)
+    
+    tooltip.append("path")
+      .attr("d", d3.symbol().type(d3.symbolTriangle).size(75))
+      .attr("transform", "translate(20,0),rotate(0)");
+
+    tooltip.append("foreignObject")
+      .attr("x", 10)
+      .attr("y", 10)
+      .attr("width", 30)
+      .attr("height", 20)
+      .append("xhtml:div");
+
     drawAcledChart();
   }
 
@@ -677,8 +772,8 @@ $( document ).ready(function() {
     height = 450;
 
     projection = d3.geoMercator()
-      .center([50, 30])
-      .scale(width / 5.5)
+      .center([24, 3])
+      .scale(width / 3)
       .translate([width / 2, height / 2]);
 
     zoom = d3.zoom()
@@ -711,6 +806,15 @@ $( document ).ready(function() {
       .append("path")
       .attr("class", "map-regions")
       .attr("d", path)
+      .style("fill", function(d){
+        var color = '#B7B7B7';
+        countryList.forEach(function(c) {
+          if (c==d.properties.ISO_A3){
+            color = '#F2F2F2';
+          }
+        })
+        return color;
+      })
       //.on("click", clicked)
       .on("mouseover", function(){ mapTooltip.style("display", null); })
       .on("mouseout", function(){ mapTooltip.style("display", "none"); })
@@ -1053,21 +1157,27 @@ $( document ).ready(function() {
       acledData = [];
       data[1] = data[1].reverse();
       data[1].forEach(function(d, i){
-        var split = d.event_date.split('-');
-        var eventDate = new Date(split[0], split[1]-1 , split[2]);
-        eventDate.setHours(0,0,0,0);
-        var eventStartDate = startOfWeek(new Date(split[0], split[1]-1 , split[2]));
-        if (eventDate >= startDate && eventDate <= endDate){
-          var obj = {
-            event_date: eventDate,
-            event_start_date: eventStartDate,
-            event_type: d.event_type,
-            country: d.country,
-            country_code: d.iso3,
-            lat: d.latitude,
-            lon: d.longitude
+        var included = false;
+        countryList.forEach(function(c){
+          if (c==d.iso3) included = true;
+        });
+        if (included){
+          var split = d.event_date.split('-');
+          var eventDate = new Date(split[0], split[1]-1 , split[2]);
+          eventDate.setHours(0,0,0,0);
+          var eventStartDate = startOfWeek(new Date(split[0], split[1]-1 , split[2]));
+          if (eventDate >= startDate && eventDate <= endDate){
+            var obj = {
+              event_date: eventDate,
+              event_start_date: eventStartDate,
+              event_type: d.event_type,
+              country: d.country,
+              country_code: d.iso3,
+              lat: d.latitude,
+              lon: d.longitude
+            }
+            acledData.push(obj);
           }
-          acledData.push(obj);
         }
       });
         

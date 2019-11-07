@@ -42,6 +42,13 @@ function closestSunday(d) {
   return d;
 }
 
+//find closest start of month
+function closestMonth(d) {
+  var closestMonth = (d.getDate()<15) ? new Date(d.getFullYear(), d.getMonth(), 1) : new Date(d.getFullYear(), d.getMonth()+1, 1);
+  return closestMonth;
+}
+
+
 //skip every other tick
 function skipTicks(ticks) {
   ticks.each(function(_,i){

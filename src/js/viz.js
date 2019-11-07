@@ -18,7 +18,7 @@ $( document ).ready(function() {
   //var playButton = d3.select("#play-button");
 
   function createSlider() {
-    var margin = {top: 0, right: 60, bottom: 30, left: 60},
+    var margin = {top: 0, right: 140, bottom: 30, left: 20},
       width = viewportWidth - margin.left - margin.right,
       height = 40 - margin.top - margin.bottom,
       targetValue = width;
@@ -54,8 +54,7 @@ $( document ).ready(function() {
           .on("start.interrupt", function() { slider.interrupt(); })
           .on("end", function() {
             var value = Math.round(x.invert(d3.event.x));
-            updateSlider(value); 
-            //updateSlider(closestSunday(new Date(value)), true); //snap slider to closest sunday (start of week)
+            updateSlider(closestMonth(new Date(value)), true); //snap slider to closest month
           })
           .on("drag", function() {
             var value = Math.round(x.invert(d3.event.x));
@@ -63,13 +62,11 @@ $( document ).ready(function() {
           })
         );
 
-        console.log(startDate, endDate)
-
     slider.insert("g", ".track-overlay")
       .attr("class", "ticks")
       .attr("transform", "translate(0," + 15 + ")")
       .selectAll("text")
-        .data(x.ticks())//d3.timeFormat.months, 12
+        .data(x.ticks(d3.timeFormat.months, 12))
         .enter()
         .append("text")
         .attr("x", x)
@@ -84,7 +81,11 @@ $( document ).ready(function() {
     //show every other tick for legibility
     var ticks = d3.selectAll(".ticks text");
     ticks.each(function(_,i){
-      if (i==0) d3.select(this).text('ALL DATES'); //use first tick to trigger show all dates
+      if (i==0) {
+        d3.select(this)
+          .text('ALL DATES') //use first tick to trigger show all dates
+          .style("text-anchor", "start");
+      }
       //if (i%2 !== 0) d3.select(this).remove();
     });
   }
@@ -630,7 +631,8 @@ $( document ).ready(function() {
       .attr("width", width)
       .attr("height", height)
       .call(zoom)
-      .on("wheel.zoom", null);
+      .on("wheel.zoom", null)
+      .on("dblclick.zoom", null);
 
     //create log scale for circle markers
     var tweetMax = d3.max(tweetCountryData, function(d){ return +d.value; } );
@@ -872,7 +874,7 @@ $( document ).ready(function() {
       .rollup(function(leaves) {
         var total = 0;
         leaves.forEach(function(d) {
-          if (d['#date+week_start'].getTime() == filterDate.getTime()) {
+          if (d['#date+month'].getTime() == filterDate.getTime()) {
             total += Number(d['#meta+count']);
           }
         })

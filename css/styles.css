@@ -1,51 +1,11 @@
-.grid-container {
-  display: grid;
-  grid-template-columns: repeat(12, 1fr);
-  grid-gap: 30px;
-  grid-template-rows: auto;
-  margin: 0 auto;
-  max-width: 900px; }
-  .grid-container.center--vertical {
-    align-items: center; }
-
-.col-3 {
-  grid-column: span 3; }
-
-.col-4 {
-  grid-column: span 4; }
-
-.col-5 {
-  grid-column: span 5; }
-
-.col-6 {
-  grid-column: span 6; }
-
-.col-7 {
-  grid-column: span 7; }
-
-.col-8 {
-  grid-column: 3 / span 8; }
-
-.col-12 {
-  grid-column: span 12; }
-
-@media only screen and (max-width: 767px) {
-  .grid-container {
-    grid-template-columns: repeat(2, 1fr);
-    grid-column-gap: 10px;
-    grid-row-gap: 0; }
-  .col-3,
-  .col-4,
-  .col-5,
-  .col-6,
-  .col-7,
-  .col-8,
-  .col-12 {
-    grid-column: 1 / -1; } }
-
 .loader {
+  color: #FFF;
   font-size: 11px;
-  text-align: center; }
+  text-align: center;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%); }
 
 .sp {
   clear: both;
@@ -55,8 +15,8 @@
 
 /* Spinner Circle Rotation */
 .sp-circle {
-  border: 4px rgba(0, 0, 0, 0.25) solid;
-  border-top: 4px black solid;
+  border: 4px rgba(255, 255, 255, 0.25) solid;
+  border-top: 4px white solid;
   border-radius: 50%;
   -webkit-animation: spCircRot .6s infinite linear;
   animation: spCircRot .6s infinite linear; }
@@ -80,22 +40,18 @@
 *:after {
   box-sizing: border-box; }
 
-html, body {
-  height: 100%; }
-
 body {
-  display: flex;
-  flex-direction: column;
+  background-color: #191a1a;
+  color: #FFF;
   font-family: 'PT Sans', sans-serif;
   font-size: 14px;
+  line-height: 20px;
   margin: 0;
   padding: 0; }
 
-main {
-  flex: 1; }
-
 footer {
-  padding: 20px 0; }
+  background-color: #FFF;
+  padding: 15px 90px 15px 0; }
 
 .logos {
   align-items: center;
@@ -110,48 +66,78 @@ footer {
 
 h1 {
   font-size: 18px;
-  margin-top: 20px;
-  text-align: center; }
+  margin: 0 0 20px; }
 
-.intro {
-  padding-bottom: 30px; }
+a {
+  color: #FFF;
+  text-decoration: unerline; }
+
+.overlay {
+  left: 45px;
+  position: absolute;
+  top: 45px;
+  z-index: 2; }
+
+.details {
+  background-color: rgba(61, 61, 63, 0.8);
+  color: #FFF;
+  font-size: 14px;
+  line-height: 20px;
+  padding: 20px;
+  width: 448px; }
+  .details .label {
+    fill: #FFF; }
+
+.map-legend .label-header {
+  margin-bottom: 6px; }
+
+.map-legend label {
+  flex-direction: row-reverse;
+  justify-content: flex-end; }
+  .map-legend label input {
+    margin-right: 6px; }
 
 label,
 .label,
 .label-header {
-  font-size: 10px; }
+  fill: #FFF; }
+  label.small,
+  .label.small,
+  .label-header.small {
+    font-size: 12px; }
 
 label {
   align-items: center;
   display: flex; }
 
 .label-header {
-  font-weight: bold;
-  text-transform: uppercase; }
+  font-weight: bold; }
 
-#vis,
-#map {
+.country-dropdown {
+  font-size: 14px;
+  height: 45px;
+  margin-top: 20px; }
+
+main,
+footer {
   opacity: 0;
   transition: 0.5s all ease; }
 
-#vis {
-  min-height: 200px;
-  margin-top: -40px;
+.charts {
   position: relative; }
-
-.filter-container {
-  position: absolute;
-  top: 20px; }
-  .filter-container label {
-    padding-bottom: 5px; }
-  .filter-container select {
-    font-size: 12px; }
 
 #timeSlider {
   position: absolute; }
+  #timeSlider .ticks {
+    font-size: 12px; }
+    #timeSlider .ticks text {
+      fill: #FFF; }
 
-.ticks {
-  font-size: 10px; }
+.tick {
+  font-size: 12px; }
+  .tick text {
+    fill: #FFF;
+    fill-opacity: 0.5; }
 
 .track,
 .track-inset,
@@ -159,8 +145,8 @@ label {
   stroke-linecap: square; }
 
 .track {
-  stroke: #E9C880;
-  stroke-width: 4px; }
+  stroke: #FFF;
+  stroke-width: 5px; }
 
 .track-overlay {
   pointer-events: stroke;
@@ -169,22 +155,21 @@ label {
   cursor: crosshair; }
 
 .handle {
-  fill: #E9C880; }
+  fill: #FFF; }
 
 .median {
   stroke-width: 1px;
-  stroke: #666;
-  stroke-dasharray: 4; }
+  stroke: #FFF;
+  stroke-dasharray: 5,2;
+  shape-rendering: crispEdges; }
 
 .median-label {
-  fill: #666;
-  font-size: 10px; }
+  fill: #FFF;
+  font-size: 12px; }
 
 .grid line {
-  stroke: #CCC;
-  stroke-opacity: 1;
-  stroke-dasharray: 2,3;
-  shape-rendering: crispEdges; }
+  stroke: #FFF;
+  stroke-opacity: 0.3; }
 
 .grid path {
   stroke-width: 0; }
@@ -197,129 +182,83 @@ label {
   fill: #999; }
 
 .tooltip {
+  background-color: #FFF;
+  border: 0px;
+  border-radius: 3px;
+  color: #000;
   font-size: 14px;
   line-height: 18px;
+  height: 70px;
+  opacity: 0;
+  padding: 10px;
+  pointer-events: none;
+  position: absolute;
+  transition: 0.3s opacity ease;
+  width: 105px;
   z-index: 100; }
-  .tooltip > * {
-    fill: #E9C880;
-    opacity: 0.8; }
+  .tooltip:after {
+    border-color: rgba(136, 183, 213, 0);
+    border: solid transparent;
+    border-top-color: #FFF;
+    border-width: 10px;
+    content: " ";
+    height: 0;
+    left: 50%;
+    margin-left: -10px;
+    pointer-events: none;
+    position: absolute;
+    top: 100%;
+    width: 0; }
 
-#map {
-  border: 1px solid #CCC;
-  height: 450px;
-  overflow: hidden;
-  position: relative; }
-  #map .map-controls {
-    bottom: 15px;
-    left: 15px;
-    padding: 5px;
-    position: absolute;
-    z-index: 100; }
-    #map .map-controls .layers {
-      display: flex;
-      flex-flow: column; }
-      #map .map-controls .layers .labelHeader {
-        padding-bottom: 3px; }
-    #map .map-controls .legend {
-      background-color: rgba(255, 255, 255, 0.8);
-      border: 1px solid #B7B7B7;
-      margin-top: 5px;
-      padding: 10px 5px; }
-  #map .map-regions {
-    fill: #F2F2F2;
-    stroke: #B7B7B7; }
-  #map .tweet-layer,
-  #map .event-layer {
-    transition: 0.3s all ease; }
-  #map .zoom-controls {
-    position: absolute;
-    right: 15px;
-    bottom: 15px;
+#map .map-regions {
+  fill: #343332;
+  stroke: #6d6d6d; }
+
+#map .tweet-layer,
+#map .event-layer {
+  transition: 0.3s all ease; }
+
+#map .zoom-controls {
+  position: absolute;
+  right: 15px;
+  bottom: 15px;
+  display: grid;
+  grid-gap: 5px; }
+  #map .zoom-controls button {
+    width: 30px;
+    height: 30px;
+    font-size: 18px;
     display: grid;
-    grid-gap: 5px; }
-    #map .zoom-controls button {
-      width: 30px;
-      height: 30px;
-      font-size: 18px;
-      font-weight: bold;
-      display: grid;
-      border-radius: 50% !important;
-      background: #E9C880;
-      color: #FFF;
-      border: none;
-      user-select: none;
-      cursor: pointer;
-      box-sizing: border-box; }
-    #map .zoom-controls button:active {
-      background: rgba(200, 200, 200, 0.8); }
-    #map .zoom-controls button:focus {
-      outline: 0; }
+    border-radius: 50% !important;
+    background: #007ce1;
+    color: #FFF;
+    border: none;
+    user-select: none;
+    cursor: pointer;
+    box-sizing: border-box; }
+  #map .zoom-controls button:active {
+    background: rgba(200, 200, 200, 0.8); }
+  #map .zoom-controls button:focus {
+    outline: 0; }
+
+.country-label {
+  fill: #6d6d6d;
+  font-size: 12px;
+  pointer-events: none;
+  text-anchor: middle; }
 
 .tweet-marker {
   fill-opacity: 0.5;
-  fill: #41B3E6;
-  stroke: #41B3E6; }
+  fill: #00acee;
+  stroke: #0a95ca; }
 
 .event-marker {
-  fill-opacity: 0.5;
-  fill: #F7941E; }
+  fill-opacity: 0.7;
+  fill: #f7941e; }
 
 .tweet-bar,
 .event-bar {
   transition: 0.5s opacity ease; }
-
-.input-container {
-  display: block;
-  position: relative;
-  padding-left: 22px;
-  padding-top: 3px;
-  margin-top: 4px;
-  cursor: pointer;
-  font-size: 10px;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-  user-select: none; }
-
-.input-container input {
-  position: absolute;
-  opacity: 0;
-  cursor: pointer;
-  height: 0;
-  width: 0; }
-
-.checkmark {
-  position: absolute;
-  top: 0;
-  left: 0;
-  height: 16px;
-  width: 16px;
-  background-color: #CCC; }
-
-.input-container:hover input ~ .checkmark {
-  background-color: #F2F2F2; }
-
-.input-container input:checked ~ .checkmark {
-  background-color: #E9C880; }
-
-.checkmark:after {
-  content: "";
-  position: absolute;
-  display: none; }
-
-.input-container input:checked ~ .checkmark:after {
-  display: block; }
-
-.input-container .checkmark:after {
-  left: 6px;
-  top: 3px;
-  width: 4px;
-  height: 9px;
-  border: solid white;
-  border-width: 0 2px 2px 0;
-  -webkit-transform: rotate(45deg);
-  -ms-transform: rotate(45deg);
-  transform: rotate(45deg); }
 
 @media only screen and (max-width: 767px) {
   .logos .grid-container > div {

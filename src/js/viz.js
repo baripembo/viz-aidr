@@ -9,8 +9,12 @@ $( document ).ready(function() {
   var formatDate = d3.timeFormat("%Y-%m");
   var numFormat = d3.format(",");
   var shortNumFormat = d3.format(".2s");
-  var viewportWidth = $('.grid-container').width();
+  var viewportWidth = window.innerWidth;
+  var chartWidth = viewportWidth*0.7;
   var startDate, endDate;
+  var chartPaddingLeft = 94;
+  var chartPaddingRight = 40;
+  var tooltip = d3.select(".tooltip");
   
   ////////// slider //////////
   var slider, handle, x;
@@ -18,13 +22,16 @@ $( document ).ready(function() {
   //var playButton = d3.select("#play-button");
 
   function createSlider() {
-    var margin = {top: 0, right: 140, bottom: 30, left: 20},
-      width = viewportWidth - margin.left - margin.right,
-      height = 40 - margin.top - margin.bottom,
+    var outerpad = aidr.x.step()*aidr.x.paddingOuter();
+    var rightPad = chartPaddingRight + outerpad + (aidr.x.bandwidth()/2);
+    var leftPad = outerpad/2 + aidr.x.bandwidth()/2;
+    var margin = {top: 15, right: rightPad, bottom: 0, left: leftPad},
+      width = chartWidth - margin.left - margin.right,
+      height = 53 - margin.top - margin.bottom,
       targetValue = width;
 
     //position slider
-    $("#timeSlider").css("top", $('#aidrChart').height()-43);
+    $("#timeSlider").css("top", $('#aidrChart').height()-53);
 
     var svg = d3.select("#timeSlider")
       .append("svg")
@@ -42,7 +49,19 @@ $( document ).ready(function() {
 
     slider = svg.append("g")
       .attr("class", "slider")
-      .attr("transform", "translate(" + margin.left + "," + height + ")");
+      .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    slider.append("line")
+      .attr("class", "track track-bg")
+      .attr("x1", -chartPaddingLeft)
+      .attr("x2", width + margin.right - 12)
+
+    slider.append("line")
+      .attr("stroke", "#FFF")
+      .attr("stroke-width", 1)
+      .attr("x1", -chartPaddingLeft)
+      .attr("x2", width + margin.right - 10)
+      .attr("transform", "translate(0,37)");
 
     slider.append("line")
       .attr("class", "track")
@@ -70,13 +89,13 @@ $( document ).ready(function() {
         .enter()
         .append("text")
         .attr("x", x)
-        .attr("y", 10)
+        .attr("y", 8)
         .style("text-anchor", "middle")
         .text(function(d) { return formatDate(d); });
 
     handle = slider.insert("circle", ".track-overlay")
       .attr("class", "handle")
-      .attr("r", 9);
+      .attr("r", 15);
 
     //show every other tick for legibility
     var ticks = d3.selectAll(".ticks text");
@@ -84,9 +103,7 @@ $( document ).ready(function() {
       if (i==0) {
         d3.select(this)
           .text('ALL DATES') //use first tick to trigger show all dates
-          .style("text-anchor", "start");
       }
-      //if (i%2 !== 0) d3.select(this).remove();
     });
   }
 
@@ -122,7 +139,7 @@ $( document ).ready(function() {
     });
 
     //create dropdown 
-    var dropdown = d3.select("#countryFilter")
+    var dropdown = d3.select(".country-dropdown")
       .selectAll("option")
       .data(countries)
       .enter().append("option")
@@ -131,8 +148,8 @@ $( document ).ready(function() {
           return d.country_code;
         });
 
-    d3.select("#countryFilter").on("change",function(e){
-      var selected = d3.select("#countryFilter").node().value;
+    d3.select(".country-dropdown").on("change",function(e){
+      var selected = d3.select(".country-dropdown").node().value;
       drawAidrChart(selected, 750);
       drawAcledChart(selected, 750);
       zoomToCountry(selected);
@@ -185,7 +202,6 @@ $( document ).ready(function() {
     var median = d3.median(tweetLangData, function(d){ return d.value; }); 
     var barsSvg = d3.select("#aidrChart svg g.bars");
     var svg = d3.select("#aidrChart svg g");
-    var tooltip = d3.select("#aidrChart .tooltip");
     var numTicks = (max>999) ? 5 : 4;
 
     //y axis
@@ -205,7 +221,7 @@ $( document ).ready(function() {
 
     svg.selectAll(".tick")
       .selectAll("text")
-        .attr("dy", -4);
+        .attr("dy", -8);
 
     //skip ticks
     if (max>999){
@@ -213,12 +229,16 @@ $( document ).ready(function() {
       skipTicks(d3.selectAll("#aidrChart .y-axis text"));
     }
 
+    var stack = d3.stack()
+      .order(d3.stackOrderReverse)
+      .offset(d3.stackOffsetNone)
+      .keys(keys)(tweetLangData);
+
     //bars
     var group = barsSvg.selectAll("g.layer")
-      .data(d3.stack().keys(keys)(tweetLangData));
+      .data(stack);
 
     group.exit().remove();
-
     group.enter().append("g")
       .classed("layer", true)
       .attr("fill", function(d){ return aidr.z(d.key); });
@@ -230,27 +250,29 @@ $( document ).ready(function() {
     bars.enter().append("rect")
       .attr("class", "bar tweet-bar")
       .merge(bars)
-      .on("mouseover", function(){ tooltip.style("display", null); })
-      .on("mouseout", function(){ tooltip.style("display", "none"); })
-      .on("mousemove", function(d){
+      .on("mouseover", function(){ tooltip.style("opacity", 1); })
+      .on("mouseout", function(d) { tooltip.style("opacity", 0); })
+      .on("mousemove", function(d) {
         var en = (d.data.en==undefined) ? '0' : numFormat(d.data.en);
         var ar = (d.data.ar==undefined) ? '0' : numFormat(d.data.ar);
         var fr = (d.data.fr==undefined) ? '0' : numFormat(d.data.fr);
-        var xPosition = d3.mouse(this)[0] - 50;
-        var yPosition = d3.mouse(this)[1] - 85;
-        tooltip.attr("transform", "translate(" + xPosition + "," + yPosition + ")");
-        tooltip.select("foreignObject").html(
-          "English: "+ en + "<br>Arabic: "+ ar + "<br>French: "+ fr
-        );
-      })
-    .transition().duration(speed)
-      .attr("x", function(d){ return aidr.x(formatDate(new Date(d.data.date))); })
-      .attr("y", function(d){ return aidr.y(d[1]); })
-      .attr("width", aidr.x.bandwidth())
-      .attr("height", function(d){ 
-        var h = (isNaN(d[1])) ? 0 : aidr.y(d[0]) - aidr.y(d[1]);
-        return h; 
-      });
+        var w = $('.tooltip')[1].clientWidth;
+        var h = $('.tooltip')[1].clientHeight;
+        tooltip
+          .style("left", (d3.event.pageX - w/2) + "px")
+          .style("top", (d3.event.pageY - h - 15) + "px")
+          .style("text-align", "left")
+          .style("opacity", 1)
+          .select("div").html("Arabic: "+ ar + "<br>English: "+ en + "<br>French: "+ fr);
+       })
+      .transition().duration(speed)
+        .attr("x", function(d){ return aidr.x(formatDate(new Date(d.data.date))); })
+        .attr("y", function(d){ return aidr.y(d[1]); })
+        .attr("width", aidr.x.bandwidth())
+        .attr("height", function(d){ 
+          var h = (isNaN(d[1])) ? 0 : aidr.y(d[0]) - aidr.y(d[1]);
+          return h; 
+        });
 
     //median
     svg.selectAll(".median")
@@ -259,23 +281,24 @@ $( document ).ready(function() {
       .attr("y2", aidr.y(median));
 
     svg.selectAll(".median-label")
-      .html("MEDIAN " + numFormat(Math.round(median)))
+      .html("Median " + numFormat(Math.round(median)))
       .transition().duration(speed)
       .attr("transform", "translate(" + (aidr.width) + "," + aidr.y(median) + ")");
   }
 
 
   var aidr = {};
+  var tip;
   function createAidrChart(){
     var tweetLangData = formatAidrData();
     var keys = tweetLangData.columns;
     keys.sort();
-    aidr.z = d3.scaleOrdinal().range(["#214189", "#41B3E6", "#9B6E50"]);
+    aidr.z = d3.scaleOrdinal().range(["#1ebfb3", "#f2645a", "#9c27b0"]);
     aidr.z.domain(keys);
 
-    var margin = {top: 100, right: 60, bottom: 30, left: 60},
-        width = viewportWidth - margin.left - margin.right,
-        height = 220 - margin.top - margin.bottom;
+    var margin = {top: 40, right: chartPaddingRight, bottom: 35, left: chartPaddingLeft},
+        width = chartWidth - margin.left - margin.right,
+        height = 165 - margin.top - margin.bottom;
 
     aidr.width = width;
 
@@ -291,7 +314,7 @@ $( document ).ready(function() {
     aidr.x = d3.scaleBand()
       .range([0, width])
       .domain(tweetLangData.map(function(d){ return formatDate(new Date(d.date)); }))
-      .padding(0.3);
+      .padding(0.4);
 
     //y axis
     aidr.y = d3.scaleLinear()
@@ -316,29 +339,31 @@ $( document ).ready(function() {
 
     svg.append("text")
       .attr("x", -9)
-      .attr("y", -14)
+      .attr("y", -18)
       .attr("dy", "1em")
       .attr("text-anchor", "end")
       .attr("class", "median-label")
 
     //legend
     var legend = svg.append("g")
-      .attr("class", "label")
+      .attr("transform", "translate(-" + chartPaddingLeft + ",20)")
+      .attr("class", "chart-legend")
       .attr("text-anchor", "end")
       .selectAll("g")
       .data(keys)
       .enter().append("g")
-        .attr("transform", function(d, i){ return "translate(-20," + i * 16 + ")"; });
+        .attr("transform", function(d, i){ return "translate(0," + (i * 16) + ")"; });
 
     legend.append("rect")
-      .attr("x", 38)
-      .attr("width", 15)
-      .attr("height", 15)
+      .attr("x", 44)
+      .attr("width", 10)
+      .attr("height", 10)
       .attr("fill", aidr.z);
 
     legend.append("text")
       .attr("x", 0)
-      .attr("y", 10)
+      .attr("y", 9)
+      .attr("class", "label small")
       .attr("dy", "0em")
       .attr("text-anchor", "start")
       .text(function(d) { 
@@ -358,33 +383,11 @@ $( document ).ready(function() {
 
     //chart title
     svg.append("text")
-      .attr("transform", "translate(-20,-20)")
+      .attr("transform", "translate(-" + chartPaddingLeft + ",-20)")
       .attr("dy", "1em")
       .attr("text-anchor", "start")
       .attr("class", "label-header")
-      .html("Insecurity Tweets");
-
-    //tooltip
-    var tooltip = svg.append("g")
-      .attr("class", "tooltip")
-      .style("display", "none");
-        
-    tooltip.append("rect")
-      .attr("rx", 3)
-      .attr("ry", 3)
-      .attr("width", 100)
-      .attr("height", 70)
-    
-    tooltip.append("path")
-      .attr("d", d3.symbol().type(d3.symbolTriangle).size(75))
-      .attr("transform", "translate(50,73.5),rotate(-180)");
-
-    tooltip.append("foreignObject")
-      .attr("x", 10)
-      .attr("y", 10)
-      .attr("width", 90)
-      .attr("height", 60)
-      .append("xhtml:div");
+      .html("Insecurity tweets by language:");
 
     drawAidrChart();
   }
@@ -412,7 +415,6 @@ $( document ).ready(function() {
     var median = d3.median(eventData, function(d){ return d.value; }); 
     var barsSvg = d3.select("#acledChart svg g.bars");
     var svg = d3.select("#acledChart svg g");
-    var tooltip = d3.select("#acledChart .tooltip");
     var numTicks = (max>999) ? 5 : 4;
 
     //y axis
@@ -432,7 +434,7 @@ $( document ).ready(function() {
 
     svg.selectAll(".tick")
       .selectAll("text")
-        .attr("dy", 11);
+        .attr("dy", 15);
 
     //skip ticks
     skipTicks(d3.selectAll("#acledChart .grid line"));
@@ -445,14 +447,18 @@ $( document ).ready(function() {
     bar.enter().append("rect")
       .attr("class", "bar event-bar")
       .merge(bar)
-      .on("mouseover", function(){ tooltip.style("display", null); })
-      .on("mouseout", function(){ tooltip.style("display", "none"); })
-      .on("mousemove", function(d){
-        var xPosition = d3.mouse(this)[0] - 15;
-        var yPosition = d3.mouse(this)[1] + 14;
-        tooltip.attr("transform", "translate(" + xPosition + "," + yPosition + ")");
-        tooltip.select("foreignObject").html(d.value);
-      })
+      .on("mouseover", function(){ tooltip.style("opacity", 1); })
+      .on("mouseout", function(d) { tooltip.style("opacity", 0); })
+      .on("mousemove", function(d) {
+        var w = $('.tooltip')[1].clientWidth;
+        var h = $('.tooltip')[1].clientHeight;
+        tooltip
+          .style("left", (d3.event.pageX - w/2) + "px")
+          .style("top", (d3.event.pageY - h - 15) + "px")
+          .style("text-align", "center")
+          .style("opacity", 1)
+          .select("div").html("Insecurity events:<br/>" + d.value);
+       })
       .transition().duration(speed)
         .attr("x", function(d){ return acled.x(formatDate(new Date(d.key))); })
         .attr("y", function(d){ return acled.y(0); })
@@ -467,7 +473,7 @@ $( document ).ready(function() {
       .attr("y2", acled.y(median))
 
     svg.selectAll(".median-label")
-      .html("MEDIAN " + numFormat(Math.round(median)))
+      .html("Median " + numFormat(Math.round(median)))
       .transition().duration(speed)
         .attr("transform", "translate(" + (acled.width) + "," + acled.y(median) + ")")
   }
@@ -475,9 +481,9 @@ $( document ).ready(function() {
   var acled = {}
   function createAcledChart(){
     var eventData = formatAcledData();
-    var margin = {top: 5, right: 60, bottom: 20, left: 60},
-      width = viewportWidth - margin.left - margin.right,
-      height = 95 - margin.top - margin.bottom;
+    var margin = {top: 0, right: chartPaddingRight, bottom: 50, left: chartPaddingLeft},
+      width = chartWidth - margin.left - margin.right,
+      height = 120 - margin.top - margin.bottom;
 
     acled.width = width;
 
@@ -492,7 +498,7 @@ $( document ).ready(function() {
     acled.x = d3.scaleBand()
       .range([0, width])
       .domain(eventData.map(function(d){ return formatDate(new Date(d.key)); }))
-      .padding(0.3);
+      .padding(0.4);
       svg.append("g")
         .attr("class", "axis x-axis")
         .attr("transform", "translate(0,0)")
@@ -524,44 +530,22 @@ $( document ).ready(function() {
 
     svg.append("text")
       .attr("x", -9)
-      .attr("y", 1)
+      .attr("y", 3)
       .attr("dy", "1em")
       .attr("text-anchor", "end")
       .attr("class", "median-label");
 
     //chart title
     svg.append("text")
-      .attr("transform", "translate(-20," + (height-18) + ")")
+      .attr("transform", "translate(-" + chartPaddingLeft + "," + (height-22) + ")")
       .attr("dy", "1em")
       .attr("text-anchor", "start")
       .attr("class", "label-header")
-      .html("Insecurity Events");
+      .html("Insecurity events");
 
     //skip ticks for legibility
     var ticks = d3.selectAll("#acledChart .axis text");
     skipTicks(ticks);
-
-    //tooltip
-    var tooltip = svg.append("g")
-      .attr("class", "tooltip")
-      .style("display", "none");
-        
-    tooltip.append("rect")
-      .attr("rx", 3)
-      .attr("ry", 3)
-      .attr("width", 40)
-      .attr("height", 30)
-    
-    tooltip.append("path")
-      .attr("d", d3.symbol().type(d3.symbolTriangle).size(75))
-      .attr("transform", "translate(20,0),rotate(0)");
-
-    tooltip.append("foreignObject")
-      .attr("x", 10)
-      .attr("y", 10)
-      .attr("width", 30)
-      .attr("height", 20)
-      .append("xhtml:div");
 
     drawAcledChart();
   }
@@ -596,6 +580,20 @@ $( document ).ready(function() {
       }
     }
 
+    //group event data by country
+    eventCountryData = d3.nest()
+      .key(function(d){
+        return d.country_code;
+      })
+      .rollup(function(leaves){
+        var total = 0;
+        leaves.forEach(function(d) {
+          total++;
+        })
+        return total;
+      })
+      .entries(acledData);
+
     drawMap();
   }
 
@@ -613,11 +611,13 @@ $( document ).ready(function() {
 
   var width, height, zoom, g, projection;
   function drawMap(){
-    width = viewportWidth;
-    height = 450;
+    createMapLegend();
 
+    width = viewportWidth;
+    height = $('.legend-overlay').height() + $('.chart-overlay').height() + 45;
+    
     projection = d3.geoMercator()
-      .center([24, 3])
+      .center([-10, -10])
       .scale(width / 3)
       .translate([width / 2, height / 2]);
 
@@ -633,6 +633,11 @@ $( document ).ready(function() {
       .call(zoom)
       .on("wheel.zoom", null)
       .on("dblclick.zoom", null);
+
+    mapsvg.append("rect")
+      .attr("width", "100%")
+      .attr("height", "100%")
+      .attr("fill", "#191a1a")
 
     //create log scale for circle markers
     var tweetMax = d3.max(tweetCountryData, function(d){ return +d.value; } );
@@ -652,24 +657,43 @@ $( document ).ready(function() {
       .append("path")
       .attr("class", "map-regions")
       .attr("d", path)
-      .style("fill", function(d){
-        var color = '#B7B7B7';
-        countryList.forEach(function(c) {
-          if (c==d.properties.ISO_A3){
-            color = '#F2F2F2';
-          }
-        })
-        return color;
+      .on("mouseover", function(d){ 
+        var included = false;
+        countryList.forEach(function(c){
+          if (c==d.properties['ISO_A3']) included = true;
+        });
+        if (included){
+          tooltip.style("opacity", 1); 
+        }
       })
-      //.on("click", clicked)
-      .on("mouseover", function(){ mapTooltip.style("display", null); })
-      .on("mouseout", function(){ mapTooltip.style("display", "none"); })
-      .on("mousemove", function(d){
-        var text = d.properties.NAME;
-        var xPos = d3.mouse(this)[0];
-        var yPos = d3.mouse(this)[1];
-        createMapTooltip(text, xPos, yPos);
+      .on("mouseout", function(d) { tooltip.style("opacity", 0); })
+      .on("mousemove", function(d) {
+        var included = false;
+        countryList.forEach(function(c){
+          if (c==d.properties['ISO_A3']) included = true;
+        });
+        if (included){
+          var stats = getCountryStats(d.properties['ISO_A3']);
+          var w = $('.tooltip').outerWidth();
+          var h = $('.tooltip').outerHeight();
+          tooltip.select("div").html(d.properties.NAME + "<br>Tweets: " + stats.tweets + "<br>Events: " + stats.events);
+          tooltip
+            .style("height", $('.tooltip-inner').outerHeight() + 20 + "px")
+            .style("left", (d3.event.pageX - $('.tooltip').outerWidth()/2) + "px")
+            .style("top", (d3.event.pageY - $('.tooltip').outerHeight()-15) + "px")
+            .style("text-align", "left")
+            .style("opacity", 1);
+        }
       });
+
+    //country labels
+    g.selectAll(".country-label")
+      .data(geomData.features)
+      .enter().append("text")
+        .attr("class", "country-label")
+        .attr("transform", function(d) { return "translate(" + path.centroid(d) + ")"; })
+        .attr("dy", ".35em")
+        .text(function(d) { return d.properties.NAME; });
 
     //create tweet markers
     var tweetMarker = g.append("g")
@@ -682,14 +706,19 @@ $( document ).ready(function() {
         .attr("class", "marker tweet-marker")
         .attr("r", function (d){ return (d.value==0) ? rlog(1) : rlog(d.value); })
         .attr("transform", function(d) { return "translate(" + projection([d.lon, d.lat]) + ")"; })
-        .on("mouseover", function(d){ mapTooltip.style("display", null); })
-        .on("mouseout", function(){ mapTooltip.style("display", "none"); })
-        .on("mousemove", function(d){
-          var p = projection([d.lon, d.lat]);
-          var text = d.country;
-          var xPos = d3.mouse(this)[0] + p[0];
-          var yPos = d3.mouse(this)[1] + p[1];
-          createMapTooltip(text, xPos, yPos);
+        .on("mouseover", function(){ tooltip.style("opacity", 1); })
+        .on("mouseout", function(d) { tooltip.style("opacity", 0); })
+        .on("mousemove", function(d) {
+          var stats = getCountryStats(d.key);
+          var w = $('.tooltip').outerWidth();
+          var h = $('.tooltip').outerHeight();
+          tooltip.select("div").html(d.country + "<br>Tweets: " + stats.tweets + "<br>Events: " + stats.events);
+          tooltip
+            .style("height", $('.tooltip-inner').outerHeight() + 20 + "px")
+            .style("left", (d3.event.pageX - $('.tooltip').outerWidth()/2) + "px")
+            .style("top", (d3.event.pageY - $('.tooltip').outerHeight()-15) + "px")
+            .style("text-align", "left")
+            .style("opacity", 1);
         });
 
     //create event markers
@@ -704,38 +733,24 @@ $( document ).ready(function() {
           .attr("d", d3.symbol().type(d3.symbolTriangle).size(75))
           .attr("transform", "scale(1)")
           .attr("transform", function(d){ return "translate(" + projection([d.lon, d.lat]) + ")"; })
-          .on("mouseover", function(d){ mapTooltip.style("display", null); })
-          .on("mouseout", function(){ mapTooltip.style("display", "none"); })
-          .on("mousemove", function(d){
-            var p = projection([d.lon, d.lat]);
-            var text = d.country;
-            var xPos = d3.mouse(this)[0] + p[0];
-            var yPos = d3.mouse(this)[1] + p[1]; 
-            createMapTooltip(text, xPos, yPos);
-          });
+          .on("mouseover", function(){ tooltip.style("opacity", 1); })
+          .on("mouseout", function(d) { tooltip.style("opacity", 0); })
+          .on("mousemove", function(d) {
+            var stats = getCountryStats(d.country_code);
+            var w = $('.tooltip').outerWidth();
+            var h = $('.tooltip').outerHeight();
+            tooltip.select("div").html(d.country + "<br>Tweets: " + stats.tweets + "<br>Events: " + stats.events);
+            tooltip
+              .style("height", $('.tooltip-inner').outerHeight() + 20 + "px")
+              .style("left", (d3.event.pageX - $('.tooltip').outerWidth()/2) + "px")
+              .style("top", (d3.event.pageY - $('.tooltip').outerHeight()-15) + "px")
+              .style("text-align", "left")
+              .style("opacity", 1);
+           });
 
     //tooltip
     mapTooltip = mapsvg.append("g")
-      .attr("class", "tooltip")
-      .style("display", "none");
-        
-    mapTooltip.append("rect")
-      .attr("rx", 3)
-      .attr("ry", 3)
-      .attr("width", 120)
-      .attr("height", 30);
-    
-    // mapTooltip.append('path')
-    //   .attr("d", d3.symbol().type(d3.symbolTriangle).size(75))
-    //   .attr("transform", "translate(50,33.5),rotate(-180)");
-
-    mapTooltip.append("text")
-      .attr("x", 10)
-      .attr("y", 18)
-      .attr("dy", 0)
-      .attr("width", 80)
-      .attr("height", 20)
-      .style("fill", "#000");
+      .attr("class", "tooltip");
 
     //map layers
     d3.select("#aidrLayer").on("change", function(){
@@ -754,8 +769,6 @@ $( document ).ready(function() {
     d3.select("#zoom_out").on("click", function() {
       zoom.scaleBy(mapsvg.transition().duration(500), 0.5);
     });
-
-    createMapLegend();
   }
 
   function zoomed(){
@@ -763,6 +776,9 @@ $( document ).ready(function() {
     if (!isNaN(transform.k)) {
       g.attr("transform", transform);
       g.attr("stroke-width", 1 / transform.k);
+
+      mapsvg.selectAll(".country-label")
+        .style("font-size", function(d) { return 12/transform.k+"px"; });
 
       mapsvg.selectAll(".tweet-marker")
         .transition().duration(0)
@@ -781,8 +797,8 @@ $( document ).ready(function() {
       zoom.transform,
       d3.zoomIdentity
         .translate(width / 2, height / 2)
-        .scale(Math.min(8, 0.9 / Math.max((x1 - x0) / width, (y1 - y0) / height)))
-        .translate(-(x0 + x1) / 2, -(y0 + y1) / 2),
+        .scale(Math.min(5, 0.9 / Math.max((x1 - x0) / width, (y1 - y0) / height)))
+        .translate(-(x0 + x1) / 2 + 50, -(y0 + y1) / 2 - 25),
       d3.mouse(mapsvg.node())
     );
   }
@@ -802,67 +818,75 @@ $( document ).ready(function() {
     }
   }
 
-  function createMapTooltip(content, xPos, yPos){
-    var text = mapTooltip.select("text");
-    var width = text.node().getBBox().width;
-    var height = text.node().getBBox().height;
-    var newYPos, caratYPos, caratRot;
-    var yPosLimit = 40;
-    var newYPos = (yPos < yPosLimit) ? yPos + 30 : yPos - (height+30);
-    var caratYPos = (yPos < yPosLimit) ? -3.5 : height+13.5;
-    var caratRot = (yPos < yPosLimit) ? 0 : -180;
-    text.html(content);
-    text.call(wrap, 100);
-    //mapTooltip.select("path").attr("transform", "translate(" + (width/2+10) + "," + caratYPos + "),rotate(" + caratRot + ")");
-    mapTooltip
-      .attr("transform", "translate(20,20)")
-      //.attr("transform", "translate(" + (xPos-width/2-10) + "," + newYPos + ")")
-      .select("rect")
-        .attr('width', width+20)
-        .attr('height', height+10);
+  function getCountryStats(country){
+    var obj = {'tweets': 0, 'events': 0};
+    tweetCountryData.forEach(function(d){
+      if (d.key==country){
+        obj.tweets = numFormat(d.value);
+      }
+    });
+
+    eventCountryData.forEach(function(d){
+      if (d.key==country){
+        obj.events = d.value;
+      }
+    });
+    return obj;
   }
 
   function createMapLegend(){
     var tweetMax = d3.max(tweetCountryData, function(d){ return +d.value; } );
-    var legend = d3.select(".legend").append('svg')
-      .attr('width', 130)
-      .attr('height', 115);
 
-    legend.append('text')
-      .attr('class', 'label')
-      .attr('transform', 'translate(0,12)')
-      .text('Number of Insecurity Tweets');
+    //tweets legend
+    d3.select('.map-legend').append('label')
+      .text('Number of Insecurity Tweets')
+      .append('input')
+        .attr('checked', true)
+        .attr('type', 'checkbox')
+        .attr('id', 'aidrLayer');
 
-    legend
+    var tweets = d3.select('.map-legend').append('svg')
+      .attr('width', 200)
+      .attr('height', 80);
+
+    tweets
       .append('circle')
       .attr('class', 'tweet-marker')
       .attr('r', 2)
-      .attr('transform', 'translate(10,38)');
+      .attr('transform', 'translate(10,28)');
 
-    legend.append('text')
-      .attr('class', 'label')
-      .attr('transform', 'translate(7,70)')
+    tweets.append('text')
+      .attr('class', 'label small')
+      .attr('transform', 'translate(7,68)')
       .text('1');
 
-    legend.append("circle")
+    tweets.append("circle")
       .attr('class', 'tweet-marker')
       .attr('r', 20)
-      .attr("transform", "translate(50,38)");
+      .attr("transform", "translate(50,28)");
 
-    legend.append('text')
-      .attr('class', 'label tweet-max')
-      .attr('transform', 'translate(42,70)')
+    tweets.append('text')
+      .attr('class', 'label small tweet-max')
+      .attr('transform', 'translate(42,68)')
       .text(shortNumFormat(tweetMax));
 
-    legend.append('text')
-      .attr('class', 'label')
-      .attr('transform', 'translate(0,95)')
-      .text('Insecurity Event');
 
-    legend.append('path')
+    //events legend
+    d3.select('.map-legend').append('label')
+      .text('Insecurity Event')
+      .append('input')
+        .attr('checked', true)
+        .attr('type', 'checkbox')
+        .attr('id', 'acledLayer');
+
+    var events = d3.select('.map-legend').append('svg')
+      .attr('width', 200)
+      .attr('height', 25);
+
+    events.append('path')
       .attr('class', 'event-marker')
       .attr("d", d3.symbol().type(d3.symbolTriangle).size(75))
-      .attr("transform", "translate(10,110)");
+      .attr("transform", "translate(10,18)");
   }
 
   function updateMap(filterDate){
@@ -1026,16 +1050,20 @@ $( document ).ready(function() {
       //parse geom data
       geomData = topojson.feature(data[3], data[3].objects.geom);
 
-      //remove loader and show vis
-      $('.loader').hide();
-      $('#vis, #map').css('opacity', 1);
-
       //create vis elements
       createCountryFilter();
       createAidrChart();
       createAcledChart();
       createSlider();
       initMap();
+
+      //set heights
+      $('.chart-overlay').css('top', $('.legend-overlay').height() + 45);
+      $('main').css('height', $('.chart-overlay').height() + $('.legend-overlay').height() + 45);
+
+      //remove loader and show vis
+      $('.loader').hide();
+      $('main, footer').css('opacity', 1);
     });
   }
 

@@ -1,4 +1,3 @@
-@import '_grid';
 @import '_loader';
 
 * {
@@ -9,25 +8,19 @@
  box-sizing: border-box;
 }
 
-html, body {
-  height: 100%;
-}
-
 body {
-  display: flex;
-  flex-direction: column;
+  background-color: #191a1a;
+  color: #FFF;
 	font-family: 'PT Sans', sans-serif;
   font-size: 14px;
+  line-height: 20px;
 	margin: 0;
 	padding: 0;
 }
 
-main {
-	flex: 1;
-}
-
 footer {
-	padding: 20px 0;
+  background-color: #FFF;
+	padding: 15px 90px 15px 0;
 }
 
 .logos {
@@ -46,18 +39,53 @@ footer {
 
 h1 {
   font-size: 18px;
-  margin-top: 20px;
-  text-align: center;
+  margin: 0 0 20px;
 }
 
-.intro {
-  padding-bottom: 30px;
+a {
+  color: #FFF;
+  text-decoration: unerline;
+}
+
+.overlay {
+  left: 45px;
+  position: absolute;
+  top: 45px;
+  z-index: 2;
+}
+
+.details {
+  background-color: rgba(61, 61, 63, 0.8);
+  color: #FFF;
+  font-size: 14px;
+  line-height: 20px;
+  padding: 20px;
+  width: 448px;
+  .label {
+    fill: #FFF;
+  }
+}
+
+.map-legend {
+  .label-header {
+    margin-bottom: 6px;
+  }
+  label {
+    flex-direction: row-reverse;
+    justify-content: flex-end;
+    input {
+      margin-right: 6px;
+    }
+  }
 }
 
 label,
 .label,
 .label-header {
-  font-size: 10px;
+  fill: #FFF;
+  &.small {
+    font-size: 12px;
+  }
 }
 
 label {
@@ -67,34 +95,32 @@ label {
 
 .label-header {
   font-weight: bold;
-  text-transform: uppercase;
 }
 
-#vis,
-#map {
+.country-dropdown {
+  font-size: 14px;
+  height: 45px;
+  margin-top: 20px;
+}
+
+main,
+footer {
   opacity: 0;
   transition: 0.5s all ease;
 }
 
-#vis {
-  min-height: 200px;
-  margin-top: -40px;
+.charts {
   position: relative;
-}
-
-.filter-container {
-  position: absolute;
-  top: 20px;
-  label {
-    padding-bottom: 5px;
-  }
-  select {
-    font-size: 12px;
-  }
 }
 
 #timeSlider {
   position: absolute;
+  .ticks {
+    font-size: 12px;
+    text {
+      fill: #FFF;
+    }
+  }
 }
 
 // #play-button {
@@ -117,8 +143,12 @@ label {
 //   background-color: #696969;
 // }    
 
-.ticks {
-  font-size: 10px;
+.tick {
+  font-size: 12px;
+  text {
+    fill: #FFF;
+    fill-opacity: 0.5;
+  }
 }
 
 .track,
@@ -128,8 +158,8 @@ label {
 }
 
 .track {
-  stroke: #E9C880;
-  stroke-width: 4px;
+  stroke: #FFF;
+  stroke-width: 5px;
 }
 
 .track-overlay {
@@ -140,25 +170,24 @@ label {
 }
 
 .handle {
-  fill: #E9C880;
+  fill: #FFF;
 }
 
 .median {
   stroke-width: 1px;
-  stroke: #666;
-  stroke-dasharray: 4;
+  stroke: #FFF;
+  stroke-dasharray: 5,2;
+  shape-rendering: crispEdges;
 }
 
 .median-label {
-  fill: #666;
-  font-size: 10px;
+  fill: #FFF;
+  font-size: 12px;
 }
 
 .grid line {
-  stroke: #CCC;
-  stroke-opacity: 1;
-  stroke-dasharray: 2,3;
-  shape-rendering: crispEdges;
+  stroke: #FFF;
+  stroke-opacity: 0.3;
 }
 
 .grid path {
@@ -176,43 +205,40 @@ label {
 }
 
 .tooltip {
+  background-color: #FFF;
+  border: 0px;
+  border-radius: 3px;
+  color: #000;
   font-size: 14px;
   line-height: 18px;
+  height: 70px;
+  opacity: 0;
+  padding: 10px;
+  pointer-events: none;
+  position: absolute;
+  transition: 0.3s opacity ease;
+  width: 105px;
   z-index: 100;
-  > * {
-    fill: #E9C880;
-    opacity: 0.8;
+  &:after {
+    border-color: rgba(136, 183, 213, 0);
+    border: solid transparent;
+    border-top-color: #FFF;
+    border-width: 10px;
+    content: " ";
+    height: 0;
+    left: 50%;
+    margin-left: -10px;
+    pointer-events: none;
+    position: absolute;
+    top: 100%;
+    width: 0;
   }
 }
 
 #map{
-  border: 1px solid #CCC;
-  height: 450px;
-  overflow: hidden;
-  position: relative;
-  .map-controls{
-    bottom: 15px;
-    left: 15px;
-    padding: 5px;
-    position: absolute;
-    z-index: 100;
-    .layers{
-      display: flex;
-      flex-flow: column;
-      .labelHeader{
-        padding-bottom: 3px;
-      }
-    }
-    .legend{
-      background-color: rgba(255, 255, 255, 0.8);
-      border: 1px solid #B7B7B7;
-      margin-top: 5px;
-      padding: 10px 5px;
-    }
-  }
   .map-regions{
-    fill: #F2F2F2;
-    stroke: #B7B7B7;
+    fill: #343332;
+    stroke: #6d6d6d;
   }
   .tweet-layer,
   .event-layer{
@@ -228,10 +254,9 @@ label {
       width: 30px;
       height: 30px;
       font-size: 18px;
-      font-weight: bold;
       display: grid;
       border-radius: 50% !important;
-      background: #E9C880;
+      background: #007ce1;
       color: #FFF;
       border: none;
       user-select: none;
@@ -247,75 +272,27 @@ label {
   }
 }
 
+.country-label{
+  fill: #6d6d6d;
+  font-size: 12px;
+  pointer-events: none;
+  text-anchor: middle;
+}
+
 .tweet-marker{
   fill-opacity: 0.5;
-  fill: #41B3E6;
-  stroke: #41B3E6;
+  fill: #00acee;
+  stroke: #0a95ca;
 }
 
 .event-marker{
-  fill-opacity: 0.5;
-  fill: #F7941E;
+  fill-opacity: 0.7;
+  fill: #f7941e;
 }
 
 .tweet-bar,
 .event-bar{
   transition: 0.5s opacity ease;
-}
-
-//custom checkbox styles
-.input-container {
-  display: block;
-  position: relative;
-  padding-left: 22px;
-  padding-top: 3px;
-  margin-top: 4px;
-  cursor: pointer;
-  font-size: 10px;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-  user-select: none;
-}
-.input-container input {
-  position: absolute;
-  opacity: 0;
-  cursor: pointer;
-  height: 0;
-  width: 0;
-}
-.checkmark {
-  position: absolute;
-  top: 0;
-  left: 0;
-  height: 16px;
-  width: 16px;
-  background-color: #CCC;
-}
-.input-container:hover input ~ .checkmark {
-  background-color: #F2F2F2;
-}
-.input-container input:checked ~ .checkmark {
-  background-color: #E9C880;
-}
-.checkmark:after {
-  content: "";
-  position: absolute;
-  display: none;
-}
-.input-container input:checked ~ .checkmark:after {
-  display: block;
-}
-.input-container .checkmark:after {
-  left: 6px;
-  top: 3px;
-  width: 4px;
-  height: 9px;
-  border: solid white;
-  border-width: 0 2px 2px 0;
-  -webkit-transform: rotate(45deg);
-  -ms-transform: rotate(45deg);
-  transform: rotate(45deg);
 }
 
 @media only screen and (max-width: 767px) {

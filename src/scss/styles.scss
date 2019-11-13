@@ -204,7 +204,7 @@ footer {
   } 
 }
 
-.tooltip {
+.tooltip{
   background-color: #FFF;
   border: 0px;
   border-radius: 3px;
@@ -233,9 +233,13 @@ footer {
     top: 100%;
     width: 0;
   }
+  .label-header{
+    padding-bottom: 5px;
+  }
 }
 
 #map{
+  position: relative;
   .map-regions{
     fill: #343332;
     stroke: #6d6d6d;
@@ -296,13 +300,35 @@ footer {
 }
 
 @media only screen and (max-width: 767px) {
-	.logos {
-		.grid-container > div {
-			padding: 0;
-			text-align: center;
-		}
-		img {
-			margin: 10px;
-		}
-	}
+  .legend-overlay {
+    left: 0;
+    margin: 20px;
+    position: relative;
+    top: 0;
+    .details {
+      width: 100%;
+    }
+  }
+  .chart-overlay {
+    left: 20px;
+    position: relative;
+    top: 0;
+  }
+  .country-dropdown {
+    -webkit-appearance: none;
+    padding-left: 10px;
+  }
+  footer {
+    padding: 15px;
+    .logos {
+      flex-wrap: wrap;
+      justify-content: center;
+      a:first-child {
+        margin-left: 0;
+      }
+      img {
+        margin: 10px;
+      }
+    }
+  }
 }

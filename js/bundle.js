@@ -165,8 +165,8 @@ function wrap(text, width) {
 }
 $( document ).ready(function() {
   let isMobile = $(window).width()<767 ? true : false;
-  let aidrPath = 'data/aidr-data.json';//'https://proxy.hxlstandard.org/data.objects.json?strip-headers=on&url=https%3A%2F%2Fdocs.google.com%2Fspreadsheets%2Fd%2F10gm6NsagysRfcUV1i9y7r6vCXzQd9xBf5H-5z5CFrzM%2Fedit%23gid%3D1806654635';
-  let acledPath = 'data/acled-education.csv';//'https://proxy.hxlstandard.org/data/acbeef.csv';
+  let aidrPath = 'https://proxy.hxlstandard.org/data.objects.json?strip-headers=on&url=https%3A%2F%2Fdocs.google.com%2Fspreadsheets%2Fd%2F10gm6NsagysRfcUV1i9y7r6vCXzQd9xBf5H-5z5CFrzM%2Fedit%23gid%3D1806654635';
+  let acledPath = 'https://proxy.hxlstandard.org/data/acbeef.csv';
   let geomPath = 'data/worldmap.json';
   let coordPath = 'data/coordinates.csv';
   let aidrData, acledData, geomData, coordData = '';
@@ -464,7 +464,6 @@ $( document ).ready(function() {
         width = chartWidth - margin.left - margin.right,
         height = 165 - margin.top - margin.bottom;
 
-    console.log(chartWidth, chartPaddingRight, chartPaddingLeft)
     aidr.width = width;
 
     //chart

@@ -209,37 +209,39 @@ footer {
     position: absolute;
     top: 100%;
     width: 0; }
+  .tooltip .label-header {
+    padding-bottom: 5px; }
 
-#map .map-regions {
-  fill: #343332;
-  stroke: #6d6d6d; }
-
-#map .tweet-layer,
-#map .event-layer {
-  transition: 0.3s all ease; }
-
-#map .zoom-controls {
-  position: absolute;
-  right: 15px;
-  bottom: 15px;
-  display: grid;
-  grid-gap: 5px; }
-  #map .zoom-controls button {
-    width: 30px;
-    height: 30px;
-    font-size: 18px;
+#map {
+  position: relative; }
+  #map .map-regions {
+    fill: #343332;
+    stroke: #6d6d6d; }
+  #map .tweet-layer,
+  #map .event-layer {
+    transition: 0.3s all ease; }
+  #map .zoom-controls {
+    position: absolute;
+    right: 15px;
+    bottom: 15px;
     display: grid;
-    border-radius: 50% !important;
-    background: #007ce1;
-    color: #FFF;
-    border: none;
-    user-select: none;
-    cursor: pointer;
-    box-sizing: border-box; }
-  #map .zoom-controls button:active {
-    background: rgba(200, 200, 200, 0.8); }
-  #map .zoom-controls button:focus {
-    outline: 0; }
+    grid-gap: 5px; }
+    #map .zoom-controls button {
+      width: 30px;
+      height: 30px;
+      font-size: 18px;
+      display: grid;
+      border-radius: 50% !important;
+      background: #007ce1;
+      color: #FFF;
+      border: none;
+      user-select: none;
+      cursor: pointer;
+      box-sizing: border-box; }
+    #map .zoom-controls button:active {
+      background: rgba(200, 200, 200, 0.8); }
+    #map .zoom-controls button:focus {
+      outline: 0; }
 
 .country-label {
   fill: #6d6d6d;
@@ -261,8 +263,26 @@ footer {
   transition: 0.5s opacity ease; }
 
 @media only screen and (max-width: 767px) {
-  .logos .grid-container > div {
-    padding: 0;
-    text-align: center; }
-  .logos img {
-    margin: 10px; } }
+  .legend-overlay {
+    left: 0;
+    margin: 20px;
+    position: relative;
+    top: 0; }
+    .legend-overlay .details {
+      width: 100%; }
+  .chart-overlay {
+    left: 20px;
+    position: relative;
+    top: 0; }
+  .country-dropdown {
+    -webkit-appearance: none;
+    padding-left: 10px; }
+  footer {
+    padding: 15px; }
+    footer .logos {
+      flex-wrap: wrap;
+      justify-content: center; }
+      footer .logos a:first-child {
+        margin-left: 0; }
+      footer .logos img {
+        margin: 10px; } }

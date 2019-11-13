@@ -165,8 +165,8 @@ function wrap(text, width) {
 }
 $( document ).ready(function() {
   let isMobile = $(window).width()<767 ? true : false;
-  let aidrPath = 'https://proxy.hxlstandard.org/data.objects.json?strip-headers=on&url=https%3A%2F%2Fdocs.google.com%2Fspreadsheets%2Fd%2F10gm6NsagysRfcUV1i9y7r6vCXzQd9xBf5H-5z5CFrzM%2Fedit%23gid%3D1806654635';
-  let acledPath = 'https://proxy.hxlstandard.org/data/acbeef.csv';
+  let aidrPath = 'data/aidr-data.json';//'https://proxy.hxlstandard.org/data.objects.json?strip-headers=on&url=https%3A%2F%2Fdocs.google.com%2Fspreadsheets%2Fd%2F10gm6NsagysRfcUV1i9y7r6vCXzQd9xBf5H-5z5CFrzM%2Fedit%23gid%3D1806654635';
+  let acledPath = 'data/acled-education.csv';//'https://proxy.hxlstandard.org/data/acbeef.csv';
   let geomPath = 'data/worldmap.json';
   let coordPath = 'data/coordinates.csv';
   let aidrData, acledData, geomData, coordData = '';
@@ -181,12 +181,10 @@ $( document ).ready(function() {
   var chartWidth = (isMobile) ? (viewportWidth - chartPaddingLeft) : viewportWidth*0.7;
   var tooltip = d3.select(".tooltip");
   var currentZoom = 1;
+  var currentDate = 0;
   
   ////////// slider //////////
-  var slider, handle, x;
-  //var moving = false;
-  //var playButton = d3.select("#play-button");
-
+  var slider, handle, x, stepTimer;
   function createSlider() {
     var outerpad = aidr.x.step()*aidr.x.paddingOuter();
     var rightPad = chartPaddingRight + outerpad + (aidr.x.bandwidth()/2);
@@ -238,15 +236,21 @@ $( document ).ready(function() {
         .call(d3.drag()
           .on("start.interrupt", function() { slider.interrupt(); })
           .on("end", function() {
-            var value = Math.round(x.invert(d3.event.x));
-            updateSlider(closestMonth(new Date(value)), true); //snap slider to closest month
+            if (Math.abs(d3.event.x - x(currentDate))<=30) { //hack to determine if clicking close to play button
+              stepSlider();
+              stepTimer = setInterval(stepSlider, 1000);
+            }
+            else { 
+              var value = Math.round(x.invert(d3.event.x));
+              updateSlider(closestMonth(new Date(value)), true); //snap slider to closest month
+            }
           })
           .on("drag", function() {
             var value = Math.round(x.invert(d3.event.x));
             updateSlider(value); 
           })
         );
-
+        
     slider.insert("g", ".track-overlay")
       .attr("class", "ticks")
       .attr("transform", "translate(0," + 15 + ")")
@@ -259,9 +263,19 @@ $( document ).ready(function() {
         .style("text-anchor", "middle")
         .text(function(d) { return formatDate(d); });
 
-    handle = slider.insert("circle", ".track-overlay")
-      .attr("class", "handle")
+    handle = slider.insert("g", ".track-overlay")
+      .attr("transform", "translate(0,0)")
+      .attr("class", "handle");
+
+    var circle = handle.append("circle")
+      .attr("class", "handle-circle")
       .attr("r", 15);
+
+    var play = handle.append("polygon")
+      .attr("class", "handle-triangle")
+      .attr("points", "0 10, 15 19, 0 28")
+      .attr("transform", "translate(-5,-18)");
+
 
     //show every other tick for legibility
     var ticks = d3.selectAll(".ticks text");
@@ -273,16 +287,37 @@ $( document ).ready(function() {
     });
   }
 
-  function updateSlider(h, onEnd) {
+  function updateSlider(h, onEnd){
     // update handle position
-    handle.attr("cx", x(h));
+    handle.attr("transform", "translate("+ x(h) +",0)");
 
     if (onEnd) {
-      if (h.getTime() < startDate.getTime())
+      if (h.getTime() < startDate.getTime()){
+        currentDate = 0;
         resetMap();
-      else
+      }
+      else{
+        currentDate = h;
         updateMap(h);
+      }
     }
+  }
+
+  function stepSlider(){
+    var newDate;
+    if (currentDate==0){
+      newDate = startDate;
+    }
+    else {
+      if (currentDate.getMonth()+1 <= endDate.getMonth()) {
+        newDate = new Date(currentDate.getFullYear(), currentDate.getMonth()+1, 1)
+      }
+      else {
+        newDate = currentDate;
+        clearInterval(stepTimer);
+      }
+    }
+    updateSlider(newDate, true);
   }
 
   function createCountryFilter(){
@@ -779,7 +814,7 @@ $( document ).ready(function() {
 
     width = viewportWidth;
     height = (isMobile) ? 400 : ($('.legend-overlay').height() + $('.chart-overlay').height() + 45);
-    var mapCenter = (isMobile) ? [17, 0] : [-10, -10];
+    var mapCenter = (isMobile) ? [17, 0] : [-10, -16];
     var mapScale = (isMobile) ? width/1.5 : width/3;
 
     projection = d3.geoMercator()

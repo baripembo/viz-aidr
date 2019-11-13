@@ -154,8 +154,11 @@ footer {
   stroke: transparent;
   cursor: crosshair; }
 
-.handle {
+.handle-circle {
   fill: #FFF; }
+
+.handle-triangle {
+  fill: #007ce1; }
 
 .median {
   stroke-width: 1px;
@@ -222,8 +225,8 @@ footer {
     transition: 0.3s all ease; }
   #map .zoom-controls {
     position: absolute;
-    right: 15px;
-    bottom: 15px;
+    right: 45px;
+    bottom: 45px;
     display: grid;
     grid-gap: 5px; }
     #map .zoom-controls button {

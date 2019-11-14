@@ -154,11 +154,22 @@ footer {
   stroke: transparent;
   cursor: crosshair; }
 
-.handle-circle {
+.handle.playing .handle-play {
+  display: none; }
+
+.handle.playing .handle-pause {
+  display: block; }
+
+.handle-bg {
   fill: #FFF; }
 
-.handle-triangle {
+.handle-play {
   fill: #007ce1; }
+
+.handle-pause {
+  display: none;
+  stroke: #007ce1;
+  stroke-width: 4px; }
 
 .median {
   stroke-width: 1px;
@@ -279,7 +290,10 @@ footer {
     top: 0; }
   .country-dropdown {
     -webkit-appearance: none;
+    background-color: #FFF;
     padding-left: 10px; }
+  #map .zoom-controls {
+    display: none; }
   footer {
     padding: 15px; }
     footer .logos {

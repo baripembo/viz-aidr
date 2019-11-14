@@ -668,7 +668,7 @@ $( document ).ready(function() {
     width = viewportWidth;
     height = (isMobile) ? 400 : ($('.legend-overlay').height() + $('.chart-overlay').height() + 45);
     var mapCenter = (isMobile) ? [17, 0] : [-10, -16];
-    var mapScale = (isMobile) ? width/1.5 : width/3;
+    var mapScale = (isMobile) ? width/1.5 : width/3.5;
 
     projection = d3.geoMercator()
       .center(mapCenter)
@@ -814,8 +814,6 @@ $( document ).ready(function() {
   function zoomed(){
     const {transform} = d3.event;
     currentZoom = transform.k;
-
-    console.log(currentZoom)
 
     if (!isNaN(transform.k)) {
       g.attr("transform", transform);

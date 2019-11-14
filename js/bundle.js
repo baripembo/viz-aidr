@@ -980,8 +980,6 @@ $( document ).ready(function() {
     const {transform} = d3.event;
     currentZoom = transform.k;
 
-    console.log(currentZoom)
-
     if (!isNaN(transform.k)) {
       g.attr("transform", transform);
       g.attr("stroke-width", 1 / transform.k);

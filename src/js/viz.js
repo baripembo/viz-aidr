@@ -13,11 +13,12 @@ $( document ).ready(function() {
   var startDate, endDate;
   var chartPaddingLeft = (isMobile) ? 36 : 94;
   var chartPaddingRight = 40;
-  var chartWidth = (isMobile) ? (viewportWidth - chartPaddingLeft) : viewportWidth*0.7;
+  var chartWidth = (isMobile) ? (viewportWidth - chartPaddingLeft) : 896;//viewportWidth*0.7
   var tooltip = d3.select(".tooltip");
   var currentZoom = 1;
   var currentDate = 0;
-  
+  var isPlaying = false;
+
   ////////// slider //////////
   var slider, handle, x, stepTimer;
   function createSlider() {
@@ -71,13 +72,17 @@ $( document ).ready(function() {
         .call(d3.drag()
           .on("start.interrupt", function() { slider.interrupt(); })
           .on("end", function() {
-            if (Math.abs(d3.event.x - x(currentDate))<=30) { //hack to determine if clicking close to play button
+            //hack to determine if clicking close to play button
+            if (Math.abs(d3.event.x - x(currentDate))<=30 && !isPlaying) {
               stepSlider();
               stepTimer = setInterval(stepSlider, 1000);
             }
-            else { 
+            else {
+              stopStepSlider();
+
+              //snap slider to closest month
               var value = Math.round(x.invert(d3.event.x));
-              updateSlider(closestMonth(new Date(value)), true); //snap slider to closest month
+              updateSlider(closestMonth(new Date(value)), true); 
             }
           })
           .on("drag", function() {
@@ -102,15 +107,27 @@ $( document ).ready(function() {
       .attr("transform", "translate(0,0)")
       .attr("class", "handle");
 
-    var circle = handle.append("circle")
-      .attr("class", "handle-circle")
+    var bg = handle.append("circle")
+      .attr("class", "handle-bg")
       .attr("r", 15);
 
     var play = handle.append("polygon")
-      .attr("class", "handle-triangle")
+      .attr("class", "handle-play")
       .attr("points", "0 10, 15 19, 0 28")
       .attr("transform", "translate(-5,-18)");
 
+    var pause = handle.append("g")
+      .attr("class", "handle-pause");
+
+    pause.insert("line", ".handle-pause")
+      .attr("transform", "translate(-3,-7)")
+      .attr("y1", 0)
+      .attr("y2", 15);
+
+    pause.insert("line", ".handle-pause")
+      .attr("transform", "translate(3,-7)")
+      .attr("y1", 0)
+      .attr("y2", 15);
 
     //show every other tick for legibility
     var ticks = d3.selectAll(".ticks text");
@@ -140,19 +157,20 @@ $( document ).ready(function() {
 
   function stepSlider(){
     var newDate;
-    if (currentDate==0){
-      newDate = startDate;
+    if (currentDate==0 || currentDate.getMonth()+1 <= endDate.getMonth()){
+      newDate = (currentDate==0) ? startDate : new Date(currentDate.getFullYear(), currentDate.getMonth()+1, 1);      
+      $('.handle').addClass('playing');
+      updateSlider(newDate, true);
     }
     else {
-      if (currentDate.getMonth()+1 <= endDate.getMonth()) {
-        newDate = new Date(currentDate.getFullYear(), currentDate.getMonth()+1, 1)
-      }
-      else {
-        newDate = currentDate;
-        clearInterval(stepTimer);
-      }
+      stopStepSlider();
     }
-    updateSlider(newDate, true);
+  }
+
+  function stopStepSlider(){
+    isPlaying = false;
+    clearInterval(stepTimer);
+    $('.handle').removeClass('playing');
   }
 
   function createCountryFilter(){
@@ -731,7 +749,7 @@ $( document ).ready(function() {
         .append("g")
         .append("circle")
         .attr("class", "marker tweet-marker")
-        .attr("r", function (d){ return (d.value==0) ? rlog(1) : rlog(d.value); })
+        .attr("r", function (d){ return (d.value==0) ? 0 : rlog(d.value); })
         .attr("transform", function(d){ return "translate(" + projection([d.lon, d.lat]) + ")"; })
         .on("mouseover", function(){ tooltip.style("opacity", 1); })
         .on("mouseout", function(){ tooltip.style("opacity", 0); })
@@ -797,6 +815,8 @@ $( document ).ready(function() {
     const {transform} = d3.event;
     currentZoom = transform.k;
 
+    console.log(currentZoom)
+
     if (!isNaN(transform.k)) {
       g.attr("transform", transform);
       g.attr("stroke-width", 1 / transform.k);
@@ -804,9 +824,7 @@ $( document ).ready(function() {
       mapsvg.selectAll(".country-label")
         .style("font-size", function(d) { return 12/transform.k+"px"; });
 
-      mapsvg.selectAll(".tweet-marker")
-        .transition().duration(0)
-        .attr("r", function (d){ return (d.value==0) ? rlog(1)/transform.k : rlog(d.value)/transform.k; });
+      updateTweetMarkers(tweetCountryData);
 
       mapsvg.selectAll(".event-marker")
         .transition().duration(0)
@@ -999,7 +1017,7 @@ $( document ).ready(function() {
       tweetCountryData.forEach(function(tweet){
         if (m.key == tweet.key) {
           marker.transition().duration(500).attr('r', function (d) { 
-            return (tweet.value==0) ? (rlog(1)/currentZoom) : (rlog(tweet.value)/currentZoom); 
+            return (tweet.value==0) ? 0 : (rlog(tweet.value)/currentZoom); 
           })
         }
       });
